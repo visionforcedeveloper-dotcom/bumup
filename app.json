@@ -1,8 +1,8 @@
-{
+﻿{
   "expo": {
     "name": "BumUp",
     "slug": "bumup",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./Assets/logo/logo-png.png",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.bumup.app",
-      "versionCode": 1,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./Assets/logo/logo-png.png",
         "backgroundColor": "#0D0B0E"
