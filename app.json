@@ -2,7 +2,7 @@
   "expo": {
     "name": "BumUp",
     "slug": "bumup",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./Assets/logo/logo-png.png",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.bumup.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "compileSdkVersion": 35,
       "targetSdkVersion": 35,
       "buildToolsVersion": "35.0.0",
