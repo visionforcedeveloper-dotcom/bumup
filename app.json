@@ -2,7 +2,7 @@
   "expo": {
     "name": "BumUp",
     "slug": "bumup",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./Assets/logo/logo-png.png",
@@ -11,12 +11,12 @@
       "resizeMode": "contain",
       "backgroundColor": "#0D0B0E"
     },
+    "plugins": [
+      "./plugins/withTargetSdk35"
+    ],
     "android": {
       "package": "com.bumup.app",
-      "versionCode": 6,
-      "compileSdkVersion": 35,
-      "targetSdkVersion": 35,
-      "buildToolsVersion": "35.0.0",
+      "versionCode": 7,
       "adaptiveIcon": {
         "foregroundImage": "./Assets/logo/logo-png.png",
         "backgroundColor": "#0D0B0E"
