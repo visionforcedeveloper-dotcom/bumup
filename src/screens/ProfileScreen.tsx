@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../theme';
 import { useStore } from '../store/useStore';
+import storage from '../store/storage';
 
 const goals = ['Definição', 'Bumbum', 'Perda de Peso', 'Força', 'Saúde Geral'];
 const levels = ['Iniciante', 'Intermediário', 'Avançado'];
@@ -16,6 +17,25 @@ export const ProfileScreen: React.FC = () => {
   const bmi = (profile.weight / ((profile.height / 100) ** 2)).toFixed(1);
 
   const handleSave = () => { updateProfile(form); setEditing(false); };
+
+  const handleReset = () => {
+    Alert.alert(
+      'Resetar App',
+      'Isso vai apagar todos os dados e voltar ao quiz. Tem certeza?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Resetar', style: 'destructive',
+          onPress: async () => {
+            await storage.setItem('@bumup_onboarded', 'false');
+            await storage.setItem('@bumup_profile', '{}');
+            await storage.setItem('@bumup_history', '[]');
+            Alert.alert('Feito', 'Feche e reabra o app para ver o quiz.');
+          },
+        },
+      ]
+    );
+  };
 
   const achievements = [
     { icon: 'local-fire-department' as const, name: '5 dias seguidos', unlocked: weeklyStats.streak >= 5, color: colors.accentOrange },
@@ -185,7 +205,7 @@ export const ProfileScreen: React.FC = () => {
           </View>
         ) : (
           <View style={styles.currentChip}>
-            <MaterialIcons name="dna" size={16} color={colors.primary} />
+            <MaterialIcons name="accessibility-new" size={16} color={colors.primary} />
             <Text style={styles.currentChipText}>{profile.genetics ?? 'Não definido'}</Text>
           </View>
         )}
@@ -205,6 +225,12 @@ export const ProfileScreen: React.FC = () => {
           ))}
         </View>
       </View>
+
+      {/* Reset para testes */}
+      <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
+        <MaterialIcons name="refresh" size={14} color={colors.textMuted} />
+        <Text style={styles.resetText}>Resetar onboarding</Text>
+      </TouchableOpacity>
 
       <View style={{ height: 100 }} />
     </ScrollView>
@@ -265,4 +291,10 @@ const styles = StyleSheet.create({
   achievementLocked: { opacity: 0.45 },
   achieveIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   achieveName: { fontSize: 10, color: colors.textSecondary, textAlign: 'center' },
+  resetBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.xs, marginHorizontal: spacing.lg, marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  resetText: { fontSize: 12, color: colors.textMuted },
 });

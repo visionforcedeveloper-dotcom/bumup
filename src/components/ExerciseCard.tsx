@@ -76,7 +76,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onPress, c
             <Text style={styles.meta}>{exercise.defaultSets} séries</Text>
           </View>
           <View style={styles.metaChip}>
-            <MaterialIcons name="sports-gymnastics" size={11} color={colors.textMuted} />
+            <MaterialIcons name="repeat" size={11} color={colors.textMuted} />
             <Text style={styles.meta}>{exercise.defaultReps} reps</Text>
           </View>
           <View style={styles.metaChip}>

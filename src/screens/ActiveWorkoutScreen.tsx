@@ -1,464 +1,749 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, TextInput, Alert, Image, Animated,
+  View, Text, StyleSheet, TouchableOpacity,
+  Image, Animated, Alert, ScrollView, Dimensions, Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
 import { useStore } from '../store/useStore';
 import { exercises } from '../data/exercises';
-import { RestTimerModal } from '../components/RestTimerModal';
 
-export const ActiveWorkoutScreen: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
-  const { plan } = route.params;
-  const { startWorkout, completeSet, finishWorkout, activeWorkout, startRestTimer } = useStore();
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
-  const [elapsed, setElapsed] = useState(0);
-  const [currentExIdx, setCurrentExIdx] = useState(0);
-  const [setInputs, setSetInputs] = useState<Record<string, { reps: string; weight: string }>>({});
-  const [exerciseDone, setExerciseDone] = useState<Record<number, boolean>>({});
-  const timerRef = useRef<any>(null);
-  const doneAnim = useRef(new Animated.Value(1)).current;
+const fmt = (s: number) =>
+  `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
-  const planExercises = plan.exercises
-    .map((id: string) => exercises.find((e) => e.id === id))
-    .filter(Boolean);
+// ─── Confete individual ───────────────────────────────────────────────────────
+const CONFETTI_COLORS = ['#D96B9E', '#B57BEA', '#F4845F', '#7ECBA0', '#89A8E0', '#F472B6', '#E8B870'];
+
+interface ConfettiPiece {
+  x: Animated.Value;
+  y: Animated.Value;
+  rot: Animated.Value;
+  scale: Animated.Value;
+  color: string;
+  size: number;
+  left: number;
+}
+
+function useConfetti(active: boolean) {
+  const pieces = useRef<ConfettiPiece[]>(
+    Array.from({ length: 28 }, (_, i) => ({
+      x:     new Animated.Value(0),
+      y:     new Animated.Value(0),
+      rot:   new Animated.Value(0),
+      scale: new Animated.Value(0),
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      size:  Math.random() * 8 + 6,
+      left:  Math.random() * SCREEN_W,
+    }))
+  ).current;
 
   useEffect(() => {
-    startWorkout(plan.id, plan.exercises);
-    timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
-    return () => clearInterval(timerRef.current);
+    if (!active) return;
+    pieces.forEach((p, i) => {
+      p.x.setValue(0); p.y.setValue(0); p.rot.setValue(0); p.scale.setValue(0);
+      Animated.sequence([
+        Animated.delay(i * 35),
+        Animated.parallel([
+          Animated.spring(p.scale, { toValue: 1, useNativeDriver: true, tension: 80, friction: 5 }),
+          Animated.timing(p.y, { toValue: SCREEN_H * 0.5 + Math.random() * 120, duration: 1600 + Math.random() * 600, useNativeDriver: true }),
+          Animated.timing(p.x, { toValue: (Math.random() - 0.5) * 120, duration: 1400 + Math.random() * 400, useNativeDriver: true }),
+          Animated.timing(p.rot, { toValue: (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4), duration: 1600, useNativeDriver: true }),
+        ]),
+      ]).start();
+    });
+  }, [active]);
+
+  return pieces;
+}
+
+// ─── Modal de descanso ────────────────────────────────────────────────────────
+interface RestModalProps {
+  visible: boolean;
+  restSeconds: number;
+  serieNum: number;
+  totalSeries: number;
+  isLastSerie: boolean;
+  exerciseName: string;
+  onSkip: () => void;
+}
+
+const RestModal: React.FC<RestModalProps> = ({
+  visible, restSeconds, serieNum, totalSeries, isLastSerie, exerciseName, onSkip,
+}) => {
+  const [countdown, setCountdown] = useState(restSeconds);
+  const countRef   = useRef<any>(null);
+  const slideAnim  = useRef(new Animated.Value(SCREEN_H)).current;
+  const scaleAnim  = useRef(new Animated.Value(0.7)).current;
+  const confetti   = useConfetti(visible);
+
+  // Reinicia countdown sempre que o modal abre
+  useEffect(() => {
+    if (!visible) { clearInterval(countRef.current); return; }
+    setCountdown(restSeconds);
+    Animated.parallel([
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 10 }),
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 65, friction: 10 }),
+    ]).start();
+    countRef.current = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) { clearInterval(countRef.current); onSkip(); return 0; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countRef.current);
+  }, [visible]);
+
+  if (!visible) return null;
+
+  const progress = countdown / restSeconds;
+  const circumf  = 2 * Math.PI * 52;
+
+  return (
+    <Modal transparent animationType="none" visible={visible} statusBarTranslucent>
+      <View style={ms.overlay}>
+
+        {/* Confetes */}
+        {confetti.map((p, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              ms.confettiPiece,
+              {
+                left: p.left,
+                top: -20,
+                width: p.size,
+                height: p.size * (Math.random() > 0.5 ? 1 : 2.2),
+                backgroundColor: p.color,
+                borderRadius: Math.random() > 0.5 ? p.size / 2 : 2,
+                transform: [
+                  { translateY: p.y },
+                  { translateX: p.x },
+                  { rotate: p.rot.interpolate({ inputRange: [-6, 6], outputRange: ['-360deg', '360deg'] }) },
+                  { scale: p.scale },
+                ],
+              },
+            ]}
+          />
+        ))}
+
+        {/* Card */}
+        <Animated.View style={[ms.card, { transform: [{ translateY: slideAnim }, { scale: scaleAnim }] }]}>
+          <LinearGradient
+            colors={['#1C1720', '#231D28']}
+            style={ms.cardInner}
+          >
+            {/* Ícone + título */}
+            <View style={ms.topRow}>
+              <View style={ms.iconCircle}>
+                <MaterialIcons name="check-circle" size={32} color={colors.success} />
+              </View>
+              {!isLastSerie ? (
+                <Text style={ms.badge}>Série {serieNum} concluída!</Text>
+              ) : (
+                <Text style={ms.badgeFinal}>Exercício concluído!</Text>
+              )}
+            </View>
+
+            <Text style={ms.title}>
+              {isLastSerie ? '🎉 Incrível!' : 'Descanse agora'}
+            </Text>
+            <Text style={ms.subtitle}>
+              {isLastSerie
+                ? `Todas as séries de "${exerciseName}" foram feitas.`
+                : `Próxima: Série ${serieNum + 1} de ${totalSeries}`}
+            </Text>
+
+            {/* Anel regressivo */}
+            {!isLastSerie && (
+              <View style={ms.ringWrap}>
+                <View style={ms.ringBg} />
+                {/* Simula o arco com opacidade — sem SVG nativo */}
+                <View style={[ms.ringFill, { opacity: progress }]} />
+                <View style={ms.ringCenter}>
+                  <Text style={ms.ringNumber}>{countdown}</Text>
+                  <Text style={ms.ringLabel}>seg</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Botão pular/continuar */}
+            <TouchableOpacity style={ms.skipBtn} onPress={onSkip} activeOpacity={0.85}>
+              <Text style={ms.skipText}>
+                {isLastSerie ? 'Próximo exercício' : 'Pular descanso'}
+              </Text>
+              <MaterialIcons name="arrow-forward" size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </LinearGradient>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+// ─── Tela principal ───────────────────────────────────────────────────────────
+export const ActiveWorkoutScreen: React.FC<{ navigation: any; route: any }> = ({
+  navigation, route,
+}) => {
+  const { plan } = route.params;
+  const { startWorkout, completeSet, finishWorkout } = useStore();
+
+  const exerciseIds: string[] = plan.exerciseIds ?? plan.exercises ?? [];
+  const planExercises = exerciseIds
+    .map((id: string) => exercises.find((e) => e.id === id))
+    .filter(Boolean) as typeof exercises;
+
+  // ── Estado ──────────────────────────────────────────────────────────────────
+  const [currentIdx,   setCurrentIdx]   = useState(0);
+  const [elapsed,      setElapsed]      = useState(0);
+  const [serieTimer,   setSerieTimer]   = useState(0);  const [serieRunning, setSerieRunning] = useState(false);
+  const [currentSerie, setCurrentSerie] = useState(1);
+  const [doneSeries,   setDoneSeries]   = useState<Record<string, number>>({});
+  const [exDone,       setExDone]       = useState<Record<number, boolean>>({});
+  const [restModal,    setRestModal]    = useState<{ visible: boolean; isLast: boolean }>({ visible: false, isLast: false });
+
+  const workoutTimerRef = useRef<any>(null);
+  const serieTimerRef   = useRef<any>(null);
+  const pulseAnim       = useRef(new Animated.Value(1)).current;
+  const checkAnim       = useRef(new Animated.Value(0)).current;
+
+  const ex = planExercises[currentIdx];
+  const totalSeries = ex?.defaultSets ?? 3;
+  const serieDuration = ex?.defaultRest ?? 45; // usa o tempo de descanso como duração da série
+
+  // séries concluídas deste exercício
+  const doneCount = doneSeries[ex?.id ?? ''] ?? 0;
+  const isExDone  = exDone[currentIdx] ?? false;
+
+  // ── Inicializa ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    startWorkout(plan.id, exerciseIds);
+    workoutTimerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => {
+      clearInterval(workoutTimerRef.current);
+      clearInterval(serieTimerRef.current);
+    };
   }, []);
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-  };
-
-  const currentExercise = planExercises[currentExIdx];
-  const sets = activeWorkout?.exercises.find((e) => e.exerciseId === currentExercise?.id)?.sets || [];
-  const completedSets = sets.filter((s) => s.completed).length;
-  const allSetsDone = sets.length > 0 && completedSets === sets.length;
-  const isExerciseDone = exerciseDone[currentExIdx] || false;
-
-  const totalExercisesDone = Object.values(exerciseDone).filter(Boolean).length;
-
-  const handleCompleteSet = (setIndex: number) => {
-    const key = `${currentExercise?.id}-${setIndex}`;
-    const input = setInputs[key] || { reps: currentExercise?.defaultReps ?? '0', weight: '0' };
-    completeSet(
-      currentExercise!.id, setIndex,
-      parseInt(input.reps) || 0,
-      parseFloat(input.weight) || 0
+  // ── Pulso no botão quando parado ─────────────────────────────────────────
+  useEffect(() => {
+    if (serieRunning) {
+      pulseAnim.stopAnimation();
+      Animated.timing(pulseAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.06, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.96, duration: 700, useNativeDriver: true }),
+      ])
     );
-    startRestTimer(currentExercise?.defaultRest || 60);
+    loop.start();
+    return () => loop.stop();
+  }, [serieRunning]);
+
+  // ── Iniciar série ──────────────────────────────────────────────────────────
+  const startSerie = () => {
+    if (isExDone) return;
+    setSerieTimer(serieDuration);
+    setSerieRunning(true);
+    clearInterval(serieTimerRef.current);
+    serieTimerRef.current = setInterval(() => {
+      setSerieTimer((t) => {
+        if (t <= 1) {
+          clearInterval(serieTimerRef.current);
+          handleSerieComplete();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
   };
 
-  const handleMarkExerciseDone = () => {
-    // Completa todas as séries não concluídas com os valores atuais
-    sets.forEach((set, index) => {
-      if (!set.completed) {
-        const key = `${currentExercise?.id}-${index}`;
-        const input = setInputs[key] || { reps: currentExercise?.defaultReps ?? '0', weight: '0' };
-        completeSet(
-          currentExercise!.id, index,
-          parseInt(input.reps) || 0,
-          parseFloat(input.weight) || 0
-        );
-      }
-    });
+  // ── Série concluída ────────────────────────────────────────────────────────
+  const handleSerieComplete = () => {
+    setSerieRunning(false);
+    if (!ex) return;
 
-    setExerciseDone((prev) => ({ ...prev, [currentExIdx]: true }));
+    const newDone = (doneSeries[ex.id] ?? 0) + 1;
+    setDoneSeries((prev) => ({ ...prev, [ex.id]: newDone }));
+    completeSet(ex.id, currentSerie - 1, 0, 0);
 
-    // Animação de feedback
-    Animated.sequence([
-      Animated.timing(doneAnim, { toValue: 1.08, duration: 120, useNativeDriver: true }),
-      Animated.timing(doneAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
-    ]).start();
+    const isLast = newDone >= totalSeries;
+    setRestModal({ visible: true, isLast });
 
-    // Avança automaticamente para o próximo exercício após 1s
-    if (currentExIdx < planExercises.length - 1) {
-      setTimeout(() => setCurrentExIdx((i) => i + 1), 900);
+    if (isLast) {
+      setExDone((prev) => ({ ...prev, [currentIdx]: true }));
+    } else {
+      setCurrentSerie(newDone + 1);
     }
   };
 
+  // ── Fechar modal de descanso ───────────────────────────────────────────────
+  const handleRestDone = () => {
+    setRestModal({ visible: false, isLast: false });
+    if (restModal.isLast && currentIdx < planExercises.length - 1) {
+      setCurrentIdx((i) => i + 1);
+      setCurrentSerie(1);
+      setSerieTimer(0);
+    }
+  };
+
+  // ── Cancelar série ────────────────────────────────────────────────────────
+  const cancelSerie = () => {
+    clearInterval(serieTimerRef.current);
+    setSerieRunning(false);
+    setSerieTimer(0);
+  };
+
+  // ── Navegar entre exercícios ──────────────────────────────────────────────
+  const goTo = (idx: number) => {
+    if (idx < 0 || idx >= planExercises.length) return;
+    cancelSerie();
+    setCurrentIdx(idx);
+    setCurrentSerie((doneSeries[planExercises[idx]?.id ?? ''] ?? 0) + 1);
+    setSerieTimer(0);
+  };
+
+  // ── Finalizar treino ──────────────────────────────────────────────────────
   const handleFinish = () => {
-    Alert.alert('Finalizar Treino', 'Deseja finalizar o treino?', [
+    Alert.alert('Finalizar Treino', 'Deseja encerrar o treino agora?', [
       { text: 'Cancelar', style: 'cancel' },
       {
-        text: 'Finalizar', onPress: () => {
-          clearInterval(timerRef.current);
+        text: 'Finalizar',
+        onPress: () => {
+          clearInterval(workoutTimerRef.current);
+          clearInterval(serieTimerRef.current);
           finishWorkout();
+          if (plan.onComplete) plan.onComplete();
           navigation.navigate('WorkoutSummary', { duration: elapsed, planName: plan.name });
         },
       },
     ]);
   };
 
-  const goToExercise = (idx: number) => {
-    if (idx >= 0 && idx < planExercises.length) setCurrentExIdx(idx);
-  };
+  if (!ex) return null;
 
-  if (!currentExercise) return null;
+  const totalDone  = Object.values(exDone).filter(Boolean).length;
+  const progress   = totalDone / planExercises.length;
 
   return (
-    <View style={styles.container}>
-      <RestTimerModal />
+    <View style={styles.root}>
+      <RestModal
+        visible={restModal.visible}
+        restSeconds={ex.defaultRest ?? 45}
+        serieNum={doneCount}
+        totalSeries={totalSeries}
+        isLastSerie={restModal.isLast}
+        exerciseName={ex.name}
+        onSkip={handleRestDone}
+      />
 
-      {/* Header */}
+      {/* ── GIF full-screen ─────────────────────────────────────────────── */}
+      <View style={styles.gifContainer}>
+        {ex.gifUrl
+          ? <Image source={ex.gifUrl} style={styles.gif} resizeMode="contain" />
+          : (
+            <View style={styles.gifFallback}>
+              <MaterialIcons name="fitness-center" size={80} color={colors.primary + '40'} />
+            </View>
+          )
+        }
+        {/* Gradiente superior para o header */}
+        <LinearGradient
+          colors={['rgba(13,11,14,0.92)', 'transparent']}
+          style={styles.gradTop}
+        />
+        {/* Gradiente inferior para o conteúdo */}
+        <LinearGradient
+          colors={['transparent', 'rgba(13,11,14,0.97)', colors.background]}
+          style={styles.gradBottom}
+        />
+      </View>
+
+      {/* ── Header flutuante ─────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
-          <MaterialIcons name="close" size={20} color={colors.text} />
+        <TouchableOpacity style={styles.headerBtn} onPress={handleFinish}>
+          <MaterialIcons name="close" size={18} color={colors.text} />
         </TouchableOpacity>
-        <View style={styles.timerBox}>
-          <Text style={styles.timer}>{formatTime(elapsed)}</Text>
-          <Text style={styles.timerLabel}>em andamento</Text>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTimerLabel}>{plan.name}</Text>
         </View>
-        <TouchableOpacity style={styles.finishBtn} onPress={handleFinish}>
-          <Text style={styles.finishBtnText}>Finalizar</Text>
+
+        <TouchableOpacity style={[styles.headerBtn, styles.finishBtn]} onPress={handleFinish}>
+          <Text style={styles.finishText}>Finalizar</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Barra de progresso geral */}
-      <View style={styles.progressWrap}>
+      {/* ── Barra de progresso geral ─────────────────────────────────────── */}
+      <View style={styles.progressRow}>
         <View style={styles.progressBg}>
-          <View style={[styles.progressFill, {
-            width: `${(totalExercisesDone / planExercises.length) * 100}%`
-          }]} />
+          <View style={[styles.progressFill, { width: `${progress * 100}%` as any }]} />
         </View>
-        <Text style={styles.progressLabel}>{totalExercisesDone}/{planExercises.length}</Text>
+        <Text style={styles.progressTxt}>{totalDone}/{planExercises.length}</Text>
       </View>
 
-      {/* Miniaturas dos exercícios */}
+      {/* ── Dots de exercícios ───────────────────────────────────────────── */}
       <ScrollView
         horizontal showsHorizontalScrollIndicator={false}
-        style={styles.thumbScroll}
-        contentContainerStyle={styles.thumbContent}
+        style={styles.dotsScroll}
+        contentContainerStyle={styles.dotsContent}
       >
-        {planExercises.map((ex: any, i: number) => (
+        {planExercises.map((e: any, i: number) => (
           <TouchableOpacity
             key={i}
+            onPress={() => goTo(i)}
             style={[
-              styles.thumbItem,
-              i === currentExIdx && styles.thumbItemActive,
-              exerciseDone[i] && styles.thumbItemDone,
+              styles.dot,
+              i === currentIdx && styles.dotActive,
+              exDone[i]        && styles.dotDone,
             ]}
-            onPress={() => goToExercise(i)}
           >
-            {exerciseDone[i]
-              ? <MaterialIcons name="check" size={14} color="#fff" />
-              : <Text style={[styles.thumbNum, i === currentExIdx && { color: '#fff' }]}>{i + 1}</Text>
+            {exDone[i]
+              ? <MaterialIcons name="check" size={11} color="#fff" />
+              : <Text style={[styles.dotText, i === currentIdx && { color: '#fff' }]}>{i + 1}</Text>
             }
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* ── Área inferior ────────────────────────────────────────────────── */}
+      <View style={styles.bottom}>
 
-        {/* GIF do exercício */}
-        <View style={[styles.exerciseVisual, isExerciseDone && styles.exerciseVisualDone]}>
-          {currentExercise.gifUrl
-            ? <Image source={currentExercise.gifUrl} style={styles.exerciseGif} resizeMode="contain" />
-            : <View style={styles.exercisePlaceholder}>
-                <MaterialIcons name="fitness-center" size={72} color={colors.primary + '60'} />
-              </View>
-          }
-          {isExerciseDone && (
-            <View style={styles.doneBadge}>
-              <MaterialIcons name="check-circle" size={32} color={colors.success} />
-              <Text style={styles.doneBadgeText}>Concluído</Text>
+        {/* Nome + músculo */}
+        <View style={styles.exInfo}>
+          <Text style={styles.exName} numberOfLines={1}>{ex.name}</Text>
+          <View style={styles.exMeta}>
+            <View style={styles.pill}>
+              <MaterialIcons name="fitness-center" size={11} color={colors.primary} />
+              <Text style={styles.pillText}>{totalSeries} séries · {ex.defaultReps} reps</Text>
             </View>
-          )}
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={styles.visualOverlay}>
-            <Text style={styles.exerciseName}>{currentExercise.name}</Text>
-            <View style={styles.musclePill}>
-              <Text style={styles.musclePillText}>{currentExercise.muscleGroup}</Text>
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* Nav anterior / próximo */}
-        <View style={styles.exNav}>
-          <TouchableOpacity
-            style={[styles.navBtn, currentExIdx === 0 && styles.navBtnDisabled]}
-            onPress={() => goToExercise(currentExIdx - 1)}
-          >
-            <MaterialIcons name="chevron-left" size={20} color={colors.primary} />
-            <Text style={styles.navBtnText}>Anterior</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navBtn, currentExIdx === planExercises.length - 1 && styles.navBtnDisabled]}
-            onPress={() => goToExercise(currentExIdx + 1)}
-          >
-            <Text style={styles.navBtnText}>Próximo</Text>
-            <MaterialIcons name="chevron-right" size={20} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Séries */}
-        <View style={styles.setsCard}>
-          <View style={styles.setsHeader}>
-            <Text style={styles.setsTitle}>Séries</Text>
-            <Text style={styles.setsProgress}>{completedSets}/{sets.length} concluídas</Text>
-          </View>
-
-          <View style={styles.setRow}>
-            <Text style={[styles.setCol, styles.colHeader, { flex: 0.6 }]}>Série</Text>
-            <Text style={[styles.setCol, styles.colHeader, { flex: 1.5 }]}>Reps</Text>
-            <Text style={[styles.setCol, styles.colHeader, { flex: 1.5 }]}>Peso kg</Text>
-            <Text style={[styles.setCol, styles.colHeader, { flex: 0.8 }]}>OK</Text>
-          </View>
-
-          {sets.map((set, index) => {
-            const key = `${currentExercise.id}-${index}`;
-            const input = setInputs[key] || { reps: '', weight: '' };
-            return (
-              <View key={index} style={[styles.setRow, set.completed && styles.setRowDone]}>
-                <Text style={[styles.setCol, styles.setNum, { flex: 0.6 }]}>{set.setNumber}</Text>
-                <TextInput
-                  style={[styles.setCol, styles.setInput, { flex: 1.5 }]}
-                  value={input.reps}
-                  onChangeText={(v) => setSetInputs((p) => ({ ...p, [key]: { ...input, reps: v } }))}
-                  keyboardType="numeric"
-                  placeholder={currentExercise.defaultReps}
-                  placeholderTextColor={colors.textMuted}
-                  editable={!set.completed && !isExerciseDone}
-                />
-                <TextInput
-                  style={[styles.setCol, styles.setInput, { flex: 1.5 }]}
-                  value={input.weight}
-                  onChangeText={(v) => setSetInputs((p) => ({ ...p, [key]: { ...input, weight: v } }))}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={colors.textMuted}
-                  editable={!set.completed && !isExerciseDone}
-                />
-                <TouchableOpacity
-                  style={[styles.checkBtn, { flex: 0.8 }, set.completed && styles.checkBtnDone]}
-                  onPress={() => !set.completed && !isExerciseDone && handleCompleteSet(index)}
-                  activeOpacity={0.8}
-                >
-                  <MaterialIcons
-                    name={set.completed ? 'check-circle' : 'radio-button-unchecked'}
-                    size={24}
-                    color={set.completed ? '#fff' : colors.textMuted}
-                  />
-                </TouchableOpacity>
+            {isExDone && (
+              <View style={[styles.pill, { backgroundColor: colors.success + '25' }]}>
+                <MaterialIcons name="check-circle" size={11} color={colors.success} />
+                <Text style={[styles.pillText, { color: colors.success }]}>Concluído</Text>
               </View>
-            );
-          })}
+            )}
+          </View>
         </View>
 
-        {/* Botão EXERCÍCIO CONCLUÍDO */}
-        {!isExerciseDone ? (
-          <Animated.View style={[styles.doneWrap, { transform: [{ scale: doneAnim }] }]}>
+        {/* Indicador de séries */}
+        <View style={styles.seriesRow}>
+          {Array.from({ length: totalSeries }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.serieDot,
+                i < doneCount && styles.serieDotDone,
+                i === doneCount && serieRunning && styles.serieDotActive,
+              ]}
+            />
+          ))}
+          <Text style={styles.seriesLabel}>
+            {isExDone ? 'Todas as séries concluídas' : `Série ${Math.min(currentSerie, totalSeries)} de ${totalSeries}`}
+          </Text>
+        </View>
+
+        {/* Botão circular */}
+        <View style={styles.btnArea}>
+          {/* Anel de progresso SVG-like com View (workaround sem SVG) */}
+          <Animated.View style={[styles.circleBtnWrap, { transform: [{ scale: pulseAnim }] }]}>
             <TouchableOpacity
-              style={[styles.doneBtn, allSetsDone && styles.doneBtnReady]}
-              onPress={handleMarkExerciseDone}
+              style={[
+                styles.circleBtn,
+                serieRunning && styles.circleBtnRunning,
+                isExDone     && styles.circleBtnDone,
+              ]}
+              onPress={serieRunning ? cancelSerie : startSerie}
               activeOpacity={0.85}
+              disabled={isExDone}
             >
-              <MaterialIcons
-                name="check-circle"
-                size={22}
-                color={allSetsDone ? '#fff' : colors.textMuted}
-              />
-              <Text style={[styles.doneBtnText, allSetsDone && styles.doneBtnTextReady]}>
-                {allSetsDone ? 'Exercício Concluído ✓' : 'Marcar como Concluído'}
-              </Text>
+              {serieRunning ? (
+                <Text style={styles.circleBtnTimer}>{fmt(serieTimer)}</Text>
+              ) : isExDone ? (
+                <>
+                  <MaterialIcons name="check-circle" size={36} color={colors.success} />
+                  <Text style={[styles.circleBtnLabel, { color: colors.success }]}>Concluído</Text>
+                </>
+              ) : (
+                <>
+                  <MaterialIcons
+                    name={doneCount === 0 ? 'play-arrow' : 'replay'}
+                    size={38}
+                    color="#fff"
+                  />
+                  <Text style={styles.circleBtnLabel}>
+                    {doneCount === 0 ? 'Iniciar' : 'Continuar'}
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
           </Animated.View>
-        ) : (
-          <View style={styles.doneWrap}>
-            <View style={styles.doneBtnCompleted}>
-              <MaterialIcons name="check-circle" size={22} color={colors.success} />
-              <Text style={styles.doneBtnCompletedText}>Exercício Concluído!</Text>
-              {currentExIdx < planExercises.length - 1 && (
-                <TouchableOpacity
-                  style={styles.nextExBtn}
-                  onPress={() => goToExercise(currentExIdx + 1)}
-                >
-                  <Text style={styles.nextExBtnText}>Próximo exercício</Text>
-                  <MaterialIcons name="arrow-forward" size={16} color={colors.primary} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Dicas */}
-        <View style={styles.tipsCard}>
-          <View style={styles.tipsHeader}>
-            <MaterialIcons name="lightbulb" size={16} color={colors.warning} />
-            <Text style={styles.tipsTitle}>Dicas de execução</Text>
-          </View>
-          {currentExercise.tips.map((tip: string, i: number) => (
-            <View key={i} style={styles.tipRow}>
-              <View style={styles.tipDot} />
-              <Text style={styles.tipText}>{tip}</Text>
-            </View>
-          ))}
         </View>
 
-        {/* Instruções */}
-        <View style={styles.tipsCard}>
-          <View style={styles.tipsHeader}>
-            <MaterialIcons name="format-list-numbered" size={16} color={colors.accentBlue} />
-            <Text style={styles.tipsTitle}>Como executar</Text>
-          </View>
-          {currentExercise.instructions.map((inst: string, i: number) => (
-            <View key={i} style={styles.instrRow}>
-              <View style={[styles.instrNum, { backgroundColor: colors.primary }]}>
-                <Text style={styles.instrNumText}>{i + 1}</Text>
-              </View>
-              <Text style={styles.tipText}>{inst}</Text>
-            </View>
-          ))}
+        {/* Navegação anterior / próximo */}
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={[styles.navBtn, currentIdx === 0 && styles.navBtnOff]}
+            onPress={() => goTo(currentIdx - 1)}
+            disabled={currentIdx === 0}
+          >
+            <MaterialIcons name="chevron-left" size={18} color={colors.primary} />
+            <Text style={styles.navBtnText}>Anterior</Text>
+          </TouchableOpacity>
+
+          <View style={styles.navDivider} />
+
+          <TouchableOpacity
+            style={[styles.navBtn, currentIdx === planExercises.length - 1 && styles.navBtnOff]}
+            onPress={() => goTo(currentIdx + 1)}
+            disabled={currentIdx === planExercises.length - 1}
+          >
+            <Text style={styles.navBtnText}>Próximo</Text>
+            <MaterialIcons name="chevron-right" size={18} color={colors.primary} />
+          </TouchableOpacity>
         </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      </View>
     </View>
   );
 };
 
+// ─── Estilos ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.background },
+
+  // GIF
+  gifContainer: {
+    position: 'absolute', top: 0, left: 0, right: 0,
+    height: SCREEN_H * 0.58,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gif: {
+    width: SCREEN_W,
+    height: SCREEN_H * 0.58,
+  },
+  gifFallback: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.card,
+  },
+  gradTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 140 },
+  gradBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 220 },
+
+  // Badge check
+  checkBadge: {
+    position: 'absolute', top: '38%', alignSelf: 'center',
+    alignItems: 'center', gap: 6,
+  },
+  checkBadgeText: { fontSize: 16, fontWeight: '800', color: colors.success },
+
+  // Header
   header: {
+    position: 'absolute', top: 0, left: 0, right: 0,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg, paddingTop: spacing.xl + 8, paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg, paddingTop: spacing.xl + 8, paddingBottom: spacing.sm,
   },
-  closeBtn: {
+  headerBtn: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(28,23,32,0.75)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: colors.border,
   },
-  timerBox: { alignItems: 'center' },
-  timer: { fontSize: 26, fontWeight: '800', color: colors.primary },
-  timerLabel: { fontSize: 10, color: colors.textSecondary },
-  finishBtn: {
-    backgroundColor: colors.error + '20', borderWidth: 1, borderColor: colors.error,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: borderRadius.md,
-  },
-  finishBtnText: { color: colors.error, fontWeight: '700', fontSize: 13 },
+  headerCenter: { alignItems: 'center' },
+  headerTimer: { fontSize: 24, fontWeight: '800', color: colors.primary, letterSpacing: 1 },
+  headerTimerLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '600' },
+  finishBtn: { paddingHorizontal: spacing.md, width: 'auto' as any, borderColor: colors.error + '60', backgroundColor: 'rgba(232,120,120,0.12)' },
+  finishText: { fontSize: 13, fontWeight: '700', color: colors.error },
 
-  progressWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: spacing.lg, marginBottom: spacing.sm, gap: spacing.sm,
+  // Progress
+  progressRow: {
+    position: 'absolute',
+    top: spacing.xl + 8 + 38 + spacing.sm + 4,
+    left: spacing.lg, right: spacing.lg,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
   },
-  progressBg: { flex: 1, height: 4, backgroundColor: colors.border, borderRadius: 2, overflow: 'hidden' },
+  progressBg: { flex: 1, height: 3, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: colors.primary, borderRadius: 2 },
-  progressLabel: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+  progressTxt: { fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: '600' },
 
-  thumbScroll: { maxHeight: 44 },
-  thumbContent: { paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm },
-  thumbItem: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+  // Dots
+  dotsScroll: { position: 'absolute', top: spacing.xl + 8 + 38 + spacing.sm + 16 + 12, left: 0, right: 0 },
+  dotsContent: { paddingHorizontal: spacing.lg, gap: 6 },
+  dot: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(28,23,32,0.8)',
+    borderWidth: 1, borderColor: colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
-  thumbItemActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  thumbItemDone: { backgroundColor: colors.success, borderColor: colors.success },
-  thumbNum: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
+  dotActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  dotDone: { backgroundColor: colors.success, borderColor: colors.success },
+  dotText: { fontSize: 11, fontWeight: '700', color: colors.textSecondary },
 
-  exerciseVisual: {
-    height: 280, marginHorizontal: spacing.lg, borderRadius: borderRadius.lg,
-    overflow: 'hidden', marginBottom: spacing.md, backgroundColor: '#fff',
-    marginTop: spacing.sm,
-  },
-  exerciseVisualDone: { opacity: 0.75 },
-  exerciseGif: { width: '100%', height: '100%', position: 'absolute' },
-  exercisePlaceholder: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.cardLight },
-  doneBadge: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)', gap: spacing.sm,
-  },
-  doneBadgeText: { fontSize: 18, fontWeight: '800', color: colors.success },
-  visualOverlay: {
+  // Área inferior
+  bottom: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: spacing.lg, paddingBottom: spacing.xl + 8,
+    paddingHorizontal: spacing.lg,
+    top: SCREEN_H * 0.52,
+    justifyContent: 'space-between',
   },
-  exerciseName: { fontSize: 15, fontWeight: '800', color: '#fff', flex: 1 },
-  musclePill: {
-    backgroundColor: colors.primary + 'CC',
-    paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: borderRadius.full,
-  },
-  musclePillText: { fontSize: 10, fontWeight: '700', color: '#fff' },
 
-  exNav: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg, marginBottom: spacing.md,
+  // Info exercício
+  exInfo: { gap: 6 },
+  exName: { fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.4 },
+  exMeta: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: colors.card,
+    paddingHorizontal: spacing.sm, paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  pillText: { fontSize: 11, color: colors.textSecondary, fontWeight: '600' },
+
+  // Indicador de séries
+  seriesRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+  },
+  serieDot: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: colors.border,
+  },
+  serieDotDone: { backgroundColor: colors.primary },
+  serieDotActive: { backgroundColor: colors.primary, transform: [{ scale: 1.3 }] },
+  seriesLabel: { fontSize: 12, color: colors.textSecondary, marginLeft: 4 },
+
+  // Botão circular
+  btnArea: { alignItems: 'center' },
+  circleBtnWrap: {},
+  circleBtn: {
+    width: 148, height: 148, borderRadius: 74,
+    backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    gap: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  circleBtnRunning: {
+    backgroundColor: colors.primaryDark,
+    shadowColor: colors.primaryDark,
+  },
+  circleBtnDone: {
+    backgroundColor: colors.success + '20',
+    shadowColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.success,
+  },
+  circleBtnTimer: { fontSize: 32, fontWeight: '800', color: '#fff', letterSpacing: 1 },
+  circleBtnLabel: { fontSize: 17, fontWeight: '800', color: '#fff' },
+  circleBtnSub: { fontSize: 11, color: 'rgba(255,255,255,0.65)' },
+
+  // Nav
+  navRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.md,
+    borderWidth: 1, borderColor: colors.border,
+    overflow: 'hidden',
   },
   navBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: colors.card, paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm, borderRadius: borderRadius.md,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 4, paddingVertical: 14,
   },
-  navBtnDisabled: { opacity: 0.3 },
-  navBtnText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  navBtnOff: { opacity: 0.3 },
+  navBtnText: { fontSize: 14, fontWeight: '700', color: colors.primary },
+  navDivider: { width: 1, height: 20, backgroundColor: colors.border },
+});
 
-  setsCard: {
-    backgroundColor: colors.card, marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.md,
+// ─── Estilos do modal de descanso ─────────────────────────────────────────────
+const ms = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(13,11,14,0.78)',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
   },
-  setsHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
-  setsTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
-  setsProgress: { fontSize: 13, color: colors.primary, fontWeight: '600' },
-  setRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border,
+  confettiPiece: {
+    position: 'absolute',
   },
-  setRowDone: { opacity: 0.55 },
-  setCol: { textAlign: 'center', color: colors.text },
-  colHeader: { fontSize: 11, color: colors.textMuted, fontWeight: '600' },
-  setNum: { fontSize: 15, fontWeight: '700', color: colors.textSecondary },
-  setInput: {
-    backgroundColor: colors.cardLight, borderRadius: borderRadius.sm,
-    paddingVertical: 8, paddingHorizontal: spacing.sm,
-    color: colors.text, fontSize: 15, fontWeight: '700',
-    marginHorizontal: 4, textAlign: 'center',
+  card: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.xl + 16,
   },
-  checkBtn: { alignItems: 'center', justifyContent: 'center', height: 40, borderRadius: borderRadius.sm },
-  checkBtnDone: { backgroundColor: colors.primary },
-
-  doneWrap: { paddingHorizontal: spacing.lg, marginBottom: spacing.md },
-  doneBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
-    backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border,
-    borderRadius: borderRadius.lg, padding: spacing.md,
+  cardInner: {
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  doneBtnReady: {
-    backgroundColor: colors.primary, borderColor: colors.primary,
-  },
-  doneBtnText: { fontSize: 15, fontWeight: '700', color: colors.textMuted },
-  doneBtnTextReady: { color: '#fff' },
-  doneBtnCompleted: {
+  topRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.success + '18', borderWidth: 1.5, borderColor: colors.success,
-    borderRadius: borderRadius.lg, padding: spacing.md, flexWrap: 'wrap',
+    alignSelf: 'flex-start',
   },
-  doneBtnCompletedText: { fontSize: 15, fontWeight: '700', color: colors.success, flex: 1 },
-  nextExBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: colors.primary + '20',
-    paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: borderRadius.full,
+  iconCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: colors.success + '20',
+    alignItems: 'center', justifyContent: 'center',
   },
-  nextExBtnText: { fontSize: 12, color: colors.primary, fontWeight: '700' },
-
-  tipsCard: {
-    backgroundColor: colors.card, marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.md,
+  badge: {
+    fontSize: 13, fontWeight: '700', color: colors.success,
+    backgroundColor: colors.success + '18',
+    paddingHorizontal: spacing.sm, paddingVertical: 4,
+    borderRadius: borderRadius.full,
   },
-  tipsHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  tipsTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
-  tipRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.sm, gap: spacing.sm },
-  tipDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.primary, marginTop: 6 },
-  tipText: { flex: 1, fontSize: 13, color: colors.textSecondary, lineHeight: 20 },
-  instrRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.sm, gap: spacing.sm },
-  instrNum: {
-    width: 22, height: 22, borderRadius: 11,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
+  badgeFinal: {
+    fontSize: 13, fontWeight: '700', color: colors.primary,
+    backgroundColor: colors.primary + '18',
+    paddingHorizontal: spacing.sm, paddingVertical: 4,
+    borderRadius: borderRadius.full,
   },
-  instrNumText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  title: {
+    fontSize: 28, fontWeight: '800', color: colors.text,
+    letterSpacing: -0.5, alignSelf: 'flex-start',
+  },
+  subtitle: {
+    fontSize: 14, color: colors.textSecondary,
+    lineHeight: 20, alignSelf: 'flex-start',
+  },
+  // Anel regressivo
+  ringWrap: {
+    width: 120, height: 120,
+    alignItems: 'center', justifyContent: 'center',
+    marginVertical: spacing.sm,
+  },
+  ringBg: {
+    position: 'absolute',
+    width: 120, height: 120, borderRadius: 60,
+    borderWidth: 6, borderColor: colors.border,
+  },
+  ringFill: {
+    position: 'absolute',
+    width: 120, height: 120, borderRadius: 60,
+    borderWidth: 6, borderColor: colors.primary,
+  },
+  ringCenter: { alignItems: 'center', gap: 2 },
+  ringNumber: { fontSize: 36, fontWeight: '800', color: colors.text },
+  ringLabel: { fontSize: 12, color: colors.textSecondary, marginTop: -4 },
+  // Botão pular
+  skipBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'stretch', justifyContent: 'center',
+    backgroundColor: colors.primary + '18',
+    borderWidth: 1, borderColor: colors.primary + '40',
+    borderRadius: borderRadius.md,
+    paddingVertical: 14,
+  },
+  skipText: { fontSize: 15, fontWeight: '700', color: colors.primary },
 });

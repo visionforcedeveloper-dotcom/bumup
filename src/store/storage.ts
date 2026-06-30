@@ -1,21 +1,28 @@
 import { Platform } from 'react-native';
 
-// Web usa localStorage, nativo usa AsyncStorage
+// In-memory cache para persistência em sessão
+const memCache: Record<string, string> = {};
+
 const storage = {
   getItem: async (key: string): Promise<string | null> => {
     if (Platform.OS === 'web') {
       try { return localStorage.getItem(key); } catch { return null; }
     }
-    const AS = require('@react-native-async-storage/async-storage').default;
-    return AS.getItem(key);
+    return memCache[key] ?? null;
   },
   setItem: async (key: string, value: string): Promise<void> => {
     if (Platform.OS === 'web') {
       try { localStorage.setItem(key, value); } catch {}
       return;
     }
-    const AS = require('@react-native-async-storage/async-storage').default;
-    return AS.setItem(key, value);
+    memCache[key] = value;
+  },
+  removeItem: async (key: string): Promise<void> => {
+    if (Platform.OS === 'web') {
+      try { localStorage.removeItem(key); } catch {}
+      return;
+    }
+    delete memCache[key];
   },
 };
 

@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   TextInput, Animated, Dimensions, ScrollView, Image,
-} from 'react-native';import { MaterialIcons } from '@expo/vector-icons';
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
 import { useStore } from '../store/useStore';
@@ -336,8 +337,15 @@ export const OnboardingScreen: React.FC<{ onComplete: () => void }> = ({ onCompl
         )}
         {(current.type === 'welcome' || current.type === 'done') && (
           <View style={styles.ctaWrap}>
-            {current.type === 'done' && (
-              <View style={styles.summaryCard}>
+            {/* Imagem de boas-vindas — só no step welcome */}
+            {current.type === 'welcome' && (
+              <Image
+                source={require('../../Assets/img-gluteos/01.png')}
+                style={styles.welcomeImg}
+                resizeMode="contain"
+              />
+            )}
+            {current.type === 'done' && (              <View style={styles.summaryCard}>
                 {[
                   { label: 'Nome', value: answers.name },
                   { label: 'Idade', value: `${answers.age} anos` },
@@ -457,6 +465,11 @@ const styles = StyleSheet.create({
   },
   choiceLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
   ctaWrap: { gap: spacing.lg },
+  welcomeImg: {
+    width: '100%',
+    height: 260,
+    borderRadius: borderRadius.lg,
+  },
   ctaBtn: { borderRadius: borderRadius.lg, overflow: 'hidden' },
   ctaGradient: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

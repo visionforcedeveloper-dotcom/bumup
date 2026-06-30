@@ -1,28 +1,13 @@
-﻿import React from 'react';
+﻿import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ImageBackground,
+  TouchableOpacity, Image, Animated,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
 import { useStore } from '../store/useStore';
-import { weeklySchedule, workoutPlans, exercises } from '../data/exercises';
-
-const PLAN_IMAGES: Record<string, string> = {
-  plan001: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80',
-  plan002: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&q=80',
-  plan003: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80',
-  plan004: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400&q=80',
-};
-
-const GLUTE_TIPS = [
-  { icon: 'lightbulb' as const, title: 'Ativação é essencial', body: 'Sempre ative os glúteos antes do treino principal. 2 séries de ponte sem peso já fazem diferença.' },
-  { icon: 'restaurant' as const, title: 'Proteína no pós-treino', body: 'Consuma proteína em até 30 min após o treino. Isso acelera a recuperação e o crescimento muscular.' },
-  { icon: 'bedtime' as const, title: 'Sono = crescimento', body: 'Os glúteos crescem durante o descanso. Durma 7-9h por noite para maximizar os resultados.' },
-  { icon: 'repeat' as const, title: 'Progressão de carga', body: 'Aumente o peso ou as repetições a cada semana. Sem progressão, não há crescimento.' },
-  { icon: 'self-improvement' as const, title: 'Mente-músculo', body: 'Foque na contração do glúteo em cada repetição. A conexão mental faz toda a diferença.' },
-];
+import { weeklySchedule, getExerciseById } from '../data/exercises';
 
 const MUSCLE_GROUPS = [
   { name: 'Glúteo Máximo', desc: 'Volume e força', pct: 60, color: colors.primary },
@@ -30,20 +15,118 @@ const MUSCLE_GROUPS = [
   { name: 'Glúteo Mínimo', desc: 'Estabilidade', pct: 15, color: colors.accentBlue },
 ];
 
+const TESTIMONIALS = [
+  {
+    id: '1',
+    name: 'Ana Paula, 28',
+    plan: 'Desafio 30 Dias',
+    planColor: '#D96B9E',
+    text: 'Em 30 dias já senti meus glúteos muito mais firmes. O app me manteve consistente de um jeito que nunca consegui sozinha.',
+    image: require('../../Assets/depol/1.png'),
+  },
+  {
+    id: '2',
+    name: 'Carla M., 34',
+    plan: 'Glúteo Máximo',
+    planColor: '#F4845F',
+    text: 'Resultado visível em 6 semanas! Os treinos são objetivos e os GIFs deixam tudo claro. Amei cada desafio.',
+    image: require('../../Assets/depol/2.png'),
+  },
+  {
+    id: '3',
+    name: 'Fernanda L., 25',
+    plan: 'Desafio 90 Dias',
+    planColor: '#B57BEA',
+    text: 'Completei o desafio de 90 dias e a transformação foi incrível. Nunca imaginei que treinar em casa traria esses resultados.',
+    image: require('../../Assets/depol/3.png'),
+  },
+  {
+    id: '4',
+    name: 'Juliana R., 31',
+    plan: 'Bumbum do Zero',
+    planColor: '#D96B9E',
+    text: 'Comecei do zero sem saber nada de exercícios. Em 4 semanas já tinha uma rotina e meus glúteos responderam muito bem!',
+    image: require('../../Assets/depol/4.png'),
+  },
+  {
+    id: '5',
+    name: 'Mariana T., 27',
+    plan: 'Bumbum em Casa',
+    planColor: '#89A8E0',
+    text: 'Treinar em casa nunca foi tão eficiente. Sem academia, sem desculpas. Meu bumbum agradece todos os dias!',
+    image: require('../../Assets/depol/5.png'),
+  },
+  {
+    id: '6',
+    name: 'Bianca S., 22',
+    plan: 'Desafio 60 Dias',
+    planColor: '#F4845F',
+    text: 'Dois meses de dedicação e minha autoestima foi lá em cima. Os exercícios progridem na medida certa, sem me sobrecarregar.',
+    image: require('../../Assets/depol/6.png'),
+  },
+  {
+    id: '7',
+    name: 'Patrícia O., 38',
+    plan: 'Glúteo Máximo Avançado',
+    planColor: '#B57BEA',
+    text: 'Com 38 anos consegui o melhor resultado da minha vida. O protocolo avançado é desafiador mas cada série vale a pena.',
+    image: require('../../Assets/depol/7.png'),
+  },
+];
+
 export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { profile, weeklyStats, workoutHistory } = useStore();
+  const { profile, weeklyStats, workoutHistory, userActivePlan } = useStore();
   const today = new Date().getDay();
   const dayIndex = today === 0 ? 6 : today - 1;
   const todayWorkout = weeklySchedule?.[dayIndex];
-  const tipOfDay = GLUTE_TIPS[new Date().getDate() % GLUTE_TIPS.length];
+
+  // Animações do botão
+  const pulseAnim  = useRef(new Animated.Value(1)).current;
+  const ringAnim   = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Pulso suave no botão
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.07, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.96, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+    // Anel expandindo e sumindo
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(ringAnim, { toValue: 1, duration: 1400, useNativeDriver: true }),
+        Animated.delay(400),
+        Animated.timing(ringAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
 
   if (!profile?.name) return null;
 
   const weeklyGoal = profile.level === 'Avançado' ? 5 : profile.level === 'Intermediário' ? 4 : 3;
   const progressPct = Math.min((weeklyStats.workouts / weeklyGoal) * 100, 100);
 
-  // Exercício em destaque do dia
-  const featuredExercise = exercises[new Date().getDate() % exercises.length];
+  // Próximo exercício do plano ativo
+  const nextExercise = userActivePlan
+    ? getExerciseById(userActivePlan.exerciseIds[userActivePlan.currentExerciseIndex])
+    : null;
+  const activePlanProgress = userActivePlan
+    ? Math.round((userActivePlan.currentExerciseIndex / userActivePlan.exerciseIds.length) * 100)
+    : 0;
+
+  const handleContinue = () => {
+    if (!userActivePlan) return;
+    // Monta o objeto de plano compatível com ActiveWorkoutScreen
+    const plan = {
+      id: userActivePlan.planId,
+      name: userActivePlan.planName,
+      color: userActivePlan.planColor,
+      exerciseIds: userActivePlan.exerciseIds,
+      daysPerWeek: 3,
+    };
+    navigation.navigate('ActiveWorkout', { plan });
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -57,6 +140,27 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
           <Text style={styles.avatarText}>{profile.name[0].toUpperCase()}</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Esta Semana — topo */}
+      <View style={[styles.section, { marginBottom: spacing.sm }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {weeklySchedule.map((item, index) => (
+            <View key={index} style={[
+              styles.dayCard,
+              index === dayIndex && styles.dayCardActive,
+              item.completed && index !== dayIndex && styles.dayCardDone,
+            ]}>
+              <Text style={[styles.dayLabel, index === dayIndex && styles.dayLabelActive]}>{item.day}</Text>
+              {item.completed
+                ? <MaterialIcons name="check" size={14} color={index === dayIndex ? colors.background : colors.primary} />
+                : item.isRest
+                  ? <MaterialIcons name="remove" size={14} color={colors.textMuted} />
+                  : <View style={styles.dayDot} />
+              }
+            </View>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Stats row */}
@@ -78,24 +182,40 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Meta semanal */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Meta Semanal</Text>
-          <Text style={styles.sectionBadge}>{weeklyStats.workouts}/{weeklyGoal} treinos</Text>
-        </View>
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${progressPct}%` }]} />
-        </View>
-        <Text style={styles.progressHint}>
-          {weeklyStats.workouts >= weeklyGoal
-            ? '🎉 Meta atingida esta semana!'
-            : `Faltam ${weeklyGoal - weeklyStats.workouts} treino${weeklyGoal - weeklyStats.workouts > 1 ? 's' : ''} para sua meta`}
-        </Text>
-      </View>
-
       {/* Treino de hoje */}
       <View style={styles.section}>
+
+        {/* Botão Iniciar / Continuar — acima do card */}
+        <View style={styles.startBtnWrap}>
+          {/* Anel expandindo */}
+          <Animated.View style={[styles.startBtnRing, {
+            transform: [{ scale: ringAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.55] }) }],
+            opacity: ringAnim.interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.6, 0.2, 0] }),
+          }]} />
+          {/* Segundo anel com delay */}
+          <Animated.View style={[styles.startBtnRing, styles.startBtnRing2, {
+            transform: [{ scale: ringAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
+            opacity: ringAnim.interpolate({ inputRange: [0, 0.8, 1], outputRange: [0.4, 0.1, 0] }),
+          }]} />
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <TouchableOpacity
+              style={styles.startBtnMain}
+              onPress={userActivePlan && nextExercise ? handleContinue : () => navigation.navigate('Workouts')}
+              activeOpacity={0.75}
+            >
+              <View style={styles.startBtnInner}>
+                <MaterialIcons
+                  name={userActivePlan && nextExercise ? 'replay' : 'play-arrow'}
+                  size={30} color={colors.primary}
+                />
+                <Text style={styles.startBtnLabel}>
+                  {userActivePlan && nextExercise ? 'Continuar' : 'Iniciar'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
         <Text style={styles.sectionTitle}>Treino de Hoje</Text>
         <TouchableOpacity
           activeOpacity={0.9}
@@ -109,16 +229,8 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <View style={styles.todayLeft}>
               <Text style={styles.todayDay}>{weeklySchedule[dayIndex]?.day?.toUpperCase()}</Text>
               <Text style={styles.todayWorkout}>{todayWorkout?.workout}</Text>
-              {todayWorkout?.isRest ? (
+              {todayWorkout?.isRest && (
                 <Text style={styles.restText}>Dia de recuperação ativa</Text>
-              ) : (
-                <TouchableOpacity
-                  style={styles.startBtn}
-                  onPress={() => navigation.navigate('Workouts')}
-                >
-                  <MaterialIcons name="play-arrow" size={14} color={colors.background} />
-                  <Text style={styles.startBtnText}>Iniciar</Text>
-                </TouchableOpacity>
               )}
             </View>
             <MaterialIcons
@@ -129,27 +241,7 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Cronograma semanal */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Esta Semana</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {weeklySchedule.map((item, index) => (
-            <View key={index} style={[
-              styles.dayCard,
-              index === dayIndex && styles.dayCardActive,
-              item.completed && index !== dayIndex && styles.dayCardDone,
-            ]}>
-              <Text style={[styles.dayLabel, index === dayIndex && styles.dayLabelActive]}>{item.day}</Text>
-              {item.completed
-                ? <MaterialIcons name="check" size={14} color={index === dayIndex ? colors.background : colors.primary} />
-                : item.isRest
-                  ? <MaterialIcons name="remove" size={14} color={colors.textMuted} />
-                  : <View style={styles.dayDot} />
-              }
-            </View>
-          ))}
-        </ScrollView>
-      </View>
+      {/* Cronograma semanal — removido daqui, está no topo */}
 
       {/* Anatomia dos glúteos */}
       <View style={styles.section}>
@@ -177,93 +269,38 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Dica do dia */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Dica do Dia</Text>
-        <LinearGradient
-          colors={[colors.primary + '25', colors.accentPurple + '15']}
-          style={styles.tipCard}
-        >
-          <View style={styles.tipHeader}>
-            <View style={styles.tipIconWrap}>
-              <MaterialIcons name={tipOfDay.icon} size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.tipTitle}>{tipOfDay.title}</Text>
-          </View>
-          <Text style={styles.tipBody}>{tipOfDay.body}</Text>
-        </LinearGradient>
-      </View>
-
-      {/* Exercício em destaque */}
+      {/* Depoimentos */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Exercício em Destaque</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Workouts')}>
-            <Text style={styles.seeAll}>Ver todos</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Resultados Reais</Text>
+          <View style={styles.starRow}>
+            {[1,2,3,4,5].map((s) => (
+              <MaterialIcons key={s} name="star" size={13} color={colors.warning} />
+            ))}
+          </View>
         </View>
-        <TouchableOpacity
-          style={styles.featuredCard}
-          onPress={() => navigation.navigate('ExerciseDetail', { exercise: featuredExercise })}
-          activeOpacity={0.9}
-        >
-          <View style={styles.featuredLeft}>
-            <View style={[styles.featuredIcon, { backgroundColor: colors.primary + '20' }]}>
-              <MaterialIcons name="fitness-center" size={28} color={colors.primary} />
-            </View>
-          </View>
-          <View style={styles.featuredInfo}>
-            <Text style={styles.featuredName}>{featuredExercise?.name}</Text>
-            <Text style={styles.featuredMuscle}>{featuredExercise?.muscleGroup}</Text>
-            <View style={styles.featuredMeta}>
-              <View style={styles.featuredChip}>
-                <Text style={styles.featuredChipText}>{featuredExercise?.defaultSets} séries</Text>
-              </View>
-              <View style={styles.featuredChip}>
-                <Text style={styles.featuredChipText}>{featuredExercise?.defaultReps} reps</Text>
-              </View>
-              <View style={[styles.featuredChip, { backgroundColor: colors.primary + '20' }]}>
-                <Text style={[styles.featuredChipText, { color: colors.primary }]}>{featuredExercise?.difficulty}</Text>
-              </View>
-            </View>
-          </View>
-          <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
-      </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.testimonialScroll}>
+          {TESTIMONIALS.map((t) => (
+            <View key={t.id} style={styles.testimonialCard}>
+              {/* Imagem única */}
+              <Image source={t.image} style={styles.testimonialPhoto} resizeMode="cover" />
 
-      {/* Planos em destaque */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Planos de Treino</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Workouts')}>
-            <Text style={styles.seeAll}>Ver todos</Text>
-          </TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {workoutPlans.map((plan) => (
-            <TouchableOpacity
-              key={plan.id}
-              style={styles.planCard}
-              onPress={() => navigation.navigate('Workouts')}
-              activeOpacity={0.9}
-            >
-              <ImageBackground
-                source={{ uri: PLAN_IMAGES[plan.id] }}
-                style={styles.planImage}
-                imageStyle={{ borderRadius: borderRadius.lg }}
-              >
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.88)']}
-                  style={styles.planGradient}
-                >
-                  <View style={[styles.planBadge, { backgroundColor: plan.color }]}>
-                    <Text style={styles.planBadgeText}>{plan.category}</Text>
+              {/* Texto */}
+              <View style={styles.testimonialBody}>
+                <View style={styles.testimonialStars}>
+                  {[1,2,3,4,5].map((s) => (
+                    <MaterialIcons key={s} name="star" size={12} color={colors.warning} />
+                  ))}
+                </View>
+                <Text style={styles.testimonialText}>"{t.text}"</Text>
+                <View style={styles.testimonialFooter}>
+                  <Text style={styles.testimonialName}>{t.name}</Text>
+                  <View style={[styles.testimonialBadge, { backgroundColor: t.planColor + '25' }]}>
+                    <Text style={[styles.testimonialBadgeText, { color: t.planColor }]}>{t.plan}</Text>
                   </View>
-                  <Text style={styles.planName}>{plan.name}</Text>
-                  <Text style={styles.planMeta}>{plan.daysPerWeek}x/sem · {plan.duration}</Text>
-                </LinearGradient>
-              </ImageBackground>
-            </TouchableOpacity>
+                </View>
+              </View>
+            </View>
           ))}
         </ScrollView>
       </View>
@@ -438,4 +475,125 @@ const styles = StyleSheet.create({
   lastStats: { alignItems: 'center', marginLeft: spacing.md },
   lastStatVal: { fontSize: 15, fontWeight: '800', color: colors.primary },
   lastStatLbl: { fontSize: 10, color: colors.textSecondary },
+
+  // ── Depoimentos ──────────────────────────────────────────────────────────
+  testimonialScroll: { paddingBottom: spacing.xs },
+  testimonialCard: {
+    width: 280,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    marginRight: spacing.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  photosRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    gap: spacing.xs,
+    backgroundColor: colors.cardLight,
+  },
+  photoWrap: {
+    flex: 1,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  photo: {
+    width: '100%',
+    height: 130,
+    borderRadius: borderRadius.md,
+  },
+  photoLabel: {
+    position: 'absolute',
+    bottom: 6, left: 6,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 7, paddingVertical: 3,
+    borderRadius: borderRadius.sm,
+  },
+  photoLabelAfter: {
+    backgroundColor: colors.primary + 'CC',
+  },
+  photoLabelText: {
+    fontSize: 9, fontWeight: '800', color: '#fff', letterSpacing: 1,
+  },
+  photoDivider: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: colors.primary + '20',
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  testimonialBody: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  testimonialStars: { flexDirection: 'row', gap: 2 },
+  testimonialText: {
+    fontSize: 13, color: colors.text, lineHeight: 20,
+    fontStyle: 'italic',
+  },
+  testimonialFooter: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', marginTop: 2,
+  },
+  testimonialName: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
+  testimonialBadge: {
+    paddingHorizontal: spacing.sm, paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  testimonialBadgeText: { fontSize: 10, fontWeight: '700' },
+  starRow: { flexDirection: 'row', gap: 2 },
+
+  // ── Botão Iniciar / Continuar ────────────────────────────────────────────
+  startBtnWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    marginTop: spacing.xs,
+    height: 180,
+  },
+  // Anel externo animado
+  startBtnRing: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  startBtnRing2: {
+    borderColor: colors.primaryLight,
+    borderWidth: 1,
+  },
+  startBtnMain: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+  },
+  startBtnInner: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: colors.card,
+    borderWidth: 2.5,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.65,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  startBtnLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
 });

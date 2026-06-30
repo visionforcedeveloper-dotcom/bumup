@@ -22,7 +22,7 @@ export const ExerciseDetailScreen: React.FC<{ navigation: any; route: any }> = (
   const mColor = muscleColor[exercise.muscleGroup] ?? colors.primary;
 
   // Encontra o plano que contém esse exercício
-  const relatedPlan = workoutPlans.find((p) => p.exercises.includes(exercise.id)) ?? workoutPlans[0];
+  const relatedPlan = workoutPlans.find((p) => p.exerciseIds.includes(exercise.id)) ?? workoutPlans[0];
 
   return (
     <View style={styles.container}>
