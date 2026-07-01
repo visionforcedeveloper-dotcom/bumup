@@ -5,6 +5,7 @@
     "version": "1.4.7",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "jsEngine": "hermes",
     "icon": "./Assets/logo/logo-png.png",
     "splash": {
       "image": "./Assets/logo/logo-png.png",
