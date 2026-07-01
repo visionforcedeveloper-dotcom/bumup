@@ -106,7 +106,7 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 /**
  * Whether to enable the Hermes JS engine.
  */
-def hermesEnabled = project.ext.react.get("hermesEnabled", true)
+def hermesEnabled = (findProperty('expo.jsEngine') ?: "hermes") == "hermes"
 
 android {
     ndkVersion rootProject.ext.ndkVersion
