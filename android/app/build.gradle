@@ -39,6 +39,9 @@ react {
     // works correctly with Expo projects.
     cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
     bundleCommand = "export:embed"
+    
+    // Explicitly enable Hermes
+    hermesEnabled = true
 
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '..'
@@ -105,8 +108,9 @@ def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 /**
  * Whether to enable the Hermes JS engine.
+ * Force Hermes to be enabled for this build.
  */
-def hermesEnabled = (findProperty('hermesEnabled') ?: 'true').toBoolean()
+def hermesEnabled = true
 
 android {
     ndkVersion rootProject.ext.ndkVersion
