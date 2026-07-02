@@ -10,6 +10,7 @@ import { TestimonialsScreen } from './src/screens/TestimonialsScreen';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useStore } from './src/store/useStore';
 import { colors } from './src/theme';
+import { revenueCatService } from './src/services/revenueCat';
 
 type FlowStep = 'loading' | 'quiz' | 'processing' | 'testimonials' | 'paywall' | 'app';
 
@@ -64,6 +65,11 @@ function AppContent() {
 
   useEffect(() => {
     loadProfile().then(() => {});
+    
+    // Inicializar RevenueCat
+    revenueCatService.initialize().catch(err => {
+      console.error('Erro ao inicializar RevenueCat:', err);
+    });
   }, []);
 
   useEffect(() => {

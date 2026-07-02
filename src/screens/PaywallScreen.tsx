@@ -1,32 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity,
+  TouchableOpacity, ActivityIndicator, Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
-
-const PLANS = [
-  {
-    id: 'annual',
-    label: 'Anual',
-    price: 'R$ 47,00/ano',
-    total: 'equivale a R$ 3,92/mês',
-    badge: 'MELHOR OFERTA',
-    saving: 'Economize 86%',
-    color: colors.primary,
-  },
-  {
-    id: 'monthly',
-    label: 'Mensal',
-    price: 'R$ 27,00/mês',
-    total: '',
-    badge: '',
-    saving: '',
-    color: colors.accentPurple,
-  },
-];
+import { revenueCatService } from '../services/revenueCat';
+import type { PurchasesPackage } from 'react-native-purchases';
 
 const FEATURES = [
   { icon: 'block' as const,          text: 'Sem anúncios — foco total no seu treino' },
@@ -42,7 +23,147 @@ const FEATURES = [
 export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => void }> = ({
   onSubscribe, onSkip,
 }) => {
-  const [selected, setSelected] = useState('annual');
+  const [selected, setSelected] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
+  const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+
+  useEffect(() => {
+    loadOfferings();
+  }, []);
+
+  const loadOfferings = async () => {
+    try {
+      setLoading(true);
+      const offerings = await revenueCatService.getOfferings();
+      
+      if (offerings?.current?.availablePackages) {
+        const pkgs = offerings.current.availablePackages;
+        setPackages(pkgs);
+        
+        // Seleciona o anual por padrão (ou o primeiro disponível)
+        const annual = pkgs.find(p => 
+          p.identifier.includes('annual') || 
+          p.packageType === 'ANNUAL'
+        );
+        setSelected(annual?.identifier || pkgs[0]?.identifier || '');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar ofertas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os planos. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePurchase = async () => {
+    const selectedPackage = packages.find(p => p.identifier === selected);
+    if (!selectedPackage) {
+      Alert.alert('Erro', 'Selecione um plano');
+      return;
+    }
+
+    try {
+      setPurchasing(true);
+      const result = await revenueCatService.purchasePackage(selectedPackage);
+      
+      if (result.success) {
+        Alert.alert(
+          '🎉 Bem-vinda ao Premium!',
+          'Agora você tem acesso completo a todos os recursos.',
+          [{ text: 'Começar', onPress: onSubscribe }]
+        );
+      }
+    } catch (error: any) {
+      if (!error?.userCancelled) {
+        Alert.alert(
+          'Erro na compra',
+          error?.message || 'Não foi possível concluir a compra. Tente novamente.'
+        );
+      }
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      setPurchasing(true);
+      const customerInfo = await revenueCatService.restorePurchases();
+      
+      // Verifica se tem algum entitlement ativo
+      const hasActive = Object.keys(customerInfo.entitlements.active).length > 0;
+      
+      if (hasActive) {
+        Alert.alert(
+          '✅ Compras restauradas',
+          'Seus acessos foram restaurados com sucesso!',
+          [{ text: 'OK', onPress: onSubscribe }]
+        );
+      } else {
+        Alert.alert(
+          'Nenhuma compra encontrada',
+          'Não encontramos compras anteriores nesta conta.'
+        );
+      }
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível restaurar as compras.');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const formatPrice = (pkg: PurchasesPackage) => {
+    const price = pkg.product.priceString;
+    const period = pkg.packageType === 'ANNUAL' ? '/ano' : '/mês';
+    return `${price}${period}`;
+  };
+
+  const formatPeriod = (pkg: PurchasesPackage) => {
+    if (pkg.packageType === 'ANNUAL') {
+      const monthly = parseFloat(pkg.product.price) / 12;
+      return `equivale a R$ ${monthly.toFixed(2)}/mês`;
+    }
+    return '';
+  };
+
+  const getLabel = (pkg: PurchasesPackage) => {
+    if (pkg.packageType === 'ANNUAL') return 'Anual';
+    if (pkg.packageType === 'MONTHLY') return 'Mensal';
+    return pkg.product.title;
+  };
+
+  const getBadge = (pkg: PurchasesPackage) => {
+    return pkg.packageType === 'ANNUAL' ? 'MELHOR OFERTA' : '';
+  };
+
+  const getSaving = (pkg: PurchasesPackage) => {
+    return pkg.packageType === 'ANNUAL' ? 'Economize 86%' : '';
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando planos...</Text>
+      </View>
+    );
+  }
+
+  if (packages.length === 0) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <MaterialIcons name="error-outline" size={48} color={colors.textMuted} />
+        <Text style={styles.errorText}>Não foi possível carregar os planos</Text>
+        <TouchableOpacity onPress={loadOfferings} style={styles.retryBtn}>
+          <Text style={styles.retryText}>Tentar novamente</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onSkip} style={styles.skipBtn}>
+          <Text style={styles.skipText}>Continuar sem premium</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -72,35 +193,44 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
 
       {/* Plans */}
       <View style={styles.plansWrap}>
-        {PLANS.map((plan) => (
-          <TouchableOpacity
-            key={plan.id}
-            style={[styles.planCard, selected === plan.id && styles.planCardSelected]}
-            onPress={() => setSelected(plan.id)}
-            activeOpacity={0.85}
-          >
-            {plan.badge ? (
-              <View style={styles.planBadge}>
-                <Text style={styles.planBadgeText}>{plan.badge}</Text>
+        {packages.map((pkg) => {
+          const isSelected = selected === pkg.identifier;
+          const badge = getBadge(pkg);
+          
+          return (
+            <TouchableOpacity
+              key={pkg.identifier}
+              style={[styles.planCard, isSelected && styles.planCardSelected]}
+              onPress={() => setSelected(pkg.identifier)}
+              activeOpacity={0.85}
+            >
+              {badge ? (
+                <View style={styles.planBadge}>
+                  <Text style={styles.planBadgeText}>{badge}</Text>
+                </View>
+              ) : null}
+              <View style={styles.planLeft}>
+                <View style={[styles.radio, isSelected && styles.radioSelected]}>
+                  {isSelected && <View style={styles.radioDot} />}
+                </View>
+                <View>
+                  <Text style={styles.planLabel}>{getLabel(pkg)}</Text>
+                  {getSaving(pkg) ? (
+                    <Text style={styles.planSaving}>{getSaving(pkg)}</Text>
+                  ) : null}
+                </View>
               </View>
-            ) : null}
-            <View style={styles.planLeft}>
-              <View style={[styles.radio, selected === plan.id && styles.radioSelected]}>
-                {selected === plan.id && <View style={styles.radioDot} />}
+              <View style={styles.planRight}>
+                <Text style={[styles.planPrice, isSelected && { color: colors.primary }]}>
+                  {formatPrice(pkg)}
+                </Text>
+                {formatPeriod(pkg) ? (
+                  <Text style={styles.planTotal}>{formatPeriod(pkg)}</Text>
+                ) : null}
               </View>
-              <View>
-                <Text style={styles.planLabel}>{plan.label}</Text>
-                {plan.saving ? <Text style={styles.planSaving}>{plan.saving}</Text> : null}
-              </View>
-            </View>
-            <View style={styles.planRight}>
-              <Text style={[styles.planPrice, selected === plan.id && { color: colors.primary }]}>
-                {plan.price}
-              </Text>
-              {plan.total ? <Text style={styles.planTotal}>{plan.total}</Text> : null}
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* CTA */}
@@ -112,20 +242,38 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
           <Text style={styles.trialBannerSub}>sem cobrança agora</Text>
         </View>
 
-        <TouchableOpacity onPress={onSubscribe} activeOpacity={0.88}>
+        <TouchableOpacity 
+          onPress={handlePurchase} 
+          activeOpacity={0.88}
+          disabled={purchasing || !selected}
+        >
           <LinearGradient
             colors={['#4A1A35', colors.primary]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.ctaBtn}
+            style={[styles.ctaBtn, (purchasing || !selected) && styles.ctaBtnDisabled]}
           >
-            <MaterialIcons name="lock-open" size={20} color="#fff" />
-            <Text style={styles.ctaText}>Começar grátis por 3 dias</Text>
+            {purchasing ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <MaterialIcons name="lock-open" size={20} color="#fff" />
+                <Text style={styles.ctaText}>Começar grátis por 3 dias</Text>
+              </>
+            )}
           </LinearGradient>
         </TouchableOpacity>
 
         <Text style={styles.trial}>Cancele quando quiser • Sem compromisso</Text>
 
-        <TouchableOpacity onPress={onSkip} style={styles.skipBtn}>
+        <TouchableOpacity 
+          onPress={handleRestore} 
+          style={styles.restoreBtn}
+          disabled={purchasing}
+        >
+          <Text style={styles.restoreText}>Restaurar compras</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onSkip} style={styles.skipBtn} disabled={purchasing}>
           <Text style={styles.skipText}>Continuar sem premium</Text>
         </TouchableOpacity>
       </View>
@@ -145,6 +293,17 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  centered: { justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+  loadingText: { fontSize: 14, color: colors.textSecondary, marginTop: spacing.md },
+  errorText: { fontSize: 16, color: colors.textSecondary, marginTop: spacing.md, textAlign: 'center' },
+  retryBtn: { 
+    marginTop: spacing.lg, 
+    backgroundColor: colors.primary, 
+    paddingHorizontal: spacing.xl, 
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+  },
+  retryText: { fontSize: 14, fontWeight: '700', color: '#fff' },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl + 8, paddingBottom: spacing.lg },
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
@@ -213,8 +372,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: spacing.sm, borderRadius: borderRadius.lg, paddingVertical: spacing.md + 4,
   },
+  ctaBtnDisabled: { opacity: 0.6 },
   ctaText: { fontSize: 18, fontWeight: '800', color: '#fff' },
   trial: { fontSize: 12, color: colors.textSecondary, textAlign: 'center' },
+  restoreBtn: { alignItems: 'center', paddingVertical: spacing.sm },
+  restoreText: { fontSize: 13, color: colors.primary, fontWeight: '600' },
   skipBtn: { alignItems: 'center', paddingVertical: spacing.sm },
   skipText: { fontSize: 13, color: colors.textMuted, textDecorationLine: 'underline' },
   guarantee: {
