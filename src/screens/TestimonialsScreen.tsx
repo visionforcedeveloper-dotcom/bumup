@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Dimensions, Image,
@@ -7,7 +7,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
 
-const { width: W } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+const cardWidth = (width - spacing.lg * 3) / 2;
 
 const TESTIMONIALS = [
   {
@@ -53,92 +54,76 @@ const TESTIMONIALS = [
 ];
 
 export const TestimonialsScreen: React.FC<{ onContinue: () => void }> = ({ onContinue }) => {
-  const [current, setCurrent] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
-
-  const goTo = (idx: number) => {
-    setCurrent(idx);
-    scrollRef.current?.scrollTo({ x: idx * W, animated: true });
-  };
-
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#1A0F1E', colors.background]} style={styles.header}>
         <Text style={styles.headerLabel}>RESULTADOS REAIS</Text>
         <Text style={styles.title}>Elas transformaram{'\n'}o bumbum com o BumUp</Text>
-        <Text style={styles.subtitle}>Mais de 1.200 mulheres já usam o app</Text>
+        <View style={styles.ratingRow}>
+          <View style={styles.stars}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <MaterialIcons key={i} name="star" size={16} color="#FFD700" />
+            ))}
+          </View>
+          <Text style={styles.ratingText}>4.8 • Mais de 1.200 usuárias</Text>
+        </View>
       </LinearGradient>
 
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => {
-          const idx = Math.round(e.nativeEvent.contentOffset.x / W);
-          setCurrent(idx);
-        }}
-        style={styles.carousel}
-      >
-        {TESTIMONIALS.map((t, i) => (
-          <View key={i} style={styles.card}>
-            {/* Foto do depoimento */}
-            <Image source={t.image} style={styles.photo} resizeMode="cover" />
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.cardsGrid}>
+          {TESTIMONIALS.map((t, i) => (
+            <View key={i} style={styles.card}>
+              {/* Imagem compacta */}
+              <Image source={t.image} style={styles.cardImage} resizeMode="cover" />
+              
+              {/* Badge de resultado sobreposto */}
+              <View style={[styles.resultBadge, { backgroundColor: t.planColor }]}>
+                <Text style={styles.resultText}>{t.result}</Text>
+              </View>
 
-            {/* Nome + plano */}
-            <View style={styles.cardHeader}>
-              <View>
-                <Text style={styles.cardName}>{t.name}, {t.age} anos</Text>
-                <View style={styles.starsRow}>
+              {/* Informações */}
+              <View style={styles.cardContent}>
+                <Text style={styles.cardName}>{t.name}, {t.age}</Text>
+                
+                <View style={styles.cardStars}>
                   {Array.from({ length: t.stars }).map((_, si) => (
-                    <MaterialIcons key={si} name="star" size={13} color="#FFD700" />
+                    <MaterialIcons key={si} name="star" size={11} color="#FFD700" />
                   ))}
                 </View>
-              </View>
-              <View style={[styles.planBadge, { backgroundColor: t.planColor + '25' }]}>
-                <Text style={[styles.planBadgeText, { color: t.planColor }]}>{t.plan}</Text>
-              </View>
-            </View>
 
-            {/* Resultado */}
-            <View style={styles.resultBadge}>
-              <MaterialIcons name="trending-up" size={14} color={colors.primary} />
-              <Text style={styles.resultText}>{t.result}</Text>
-            </View>
+                <Text style={styles.cardQuote} numberOfLines={3}>
+                  "{t.text}"
+                </Text>
 
-            {/* Depoimento */}
-            <View style={styles.quoteWrap}>
-              <MaterialIcons name="format-quote" size={22} color={colors.primary + '60'} />
-              <Text style={styles.quoteText}>{t.text}</Text>
+                <View style={[styles.planTag, { backgroundColor: t.planColor + '20' }]}>
+                  <Text style={[styles.planTagText, { color: t.planColor }]}>{t.plan}</Text>
+                </View>
+              </View>
             </View>
+          ))}
+        </View>
+
+        {/* Stats */}
+        <View style={styles.statsSection}>
+          <Text style={styles.statsTitle}>Por que escolher o BumUp?</Text>
+          <View style={styles.statsGrid}>
+            {[
+              { icon: 'group', value: '1.200+', label: 'Usuárias ativas' },
+              { icon: 'star', value: '4.8', label: 'Avaliação média' },
+              { icon: 'trending-up', value: '89%', label: 'Veem resultados' },
+              { icon: 'fitness-center', value: '3-5x', label: 'Treinos/semana' },
+            ].map((s, i) => (
+              <View key={i} style={styles.statCard}>
+                <MaterialIcons name={s.icon as any} size={28} color={colors.primary} />
+                <Text style={styles.statValue}>{s.value}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
+            ))}
           </View>
-        ))}
+        </View>
       </ScrollView>
 
-      {/* Dots */}
-      <View style={styles.dots}>
-        {TESTIMONIALS.map((_, i) => (
-          <TouchableOpacity key={i} onPress={() => goTo(i)}>
-            <View style={[styles.dot, i === current && styles.dotActive]} />
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        {[
-          { value: '1.200+', label: 'Usuárias ativas' },
-          { value: '4.8★', label: 'Avaliação média' },
-          { value: '89%', label: 'Resultado em 4 sem.' },
-        ].map((s) => (
-          <View key={s.label} style={styles.statItem}>
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* CTA */}
+      {/* CTA fixo */}
       <View style={styles.ctaWrap}>
         <TouchableOpacity onPress={onContinue} activeOpacity={0.88}>
           <LinearGradient
@@ -146,7 +131,7 @@ export const TestimonialsScreen: React.FC<{ onContinue: () => void }> = ({ onCon
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.ctaBtn}
           >
-            <Text style={styles.ctaText}>Quero meu plano agora</Text>
+            <Text style={styles.ctaText}>Quero meu plano personalizado</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>
@@ -156,42 +141,191 @@ export const TestimonialsScreen: React.FC<{ onContinue: () => void }> = ({ onCon
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl + 8, paddingBottom: spacing.md },
-  headerLabel: { fontSize: 11, fontWeight: '800', color: colors.primary, letterSpacing: 2, marginBottom: spacing.xs },
-  title: { fontSize: 24, fontWeight: '800', color: colors.text, lineHeight: 32 },
-  subtitle: { fontSize: 13, color: colors.textSecondary, marginTop: spacing.xs },
-  carousel: { flexGrow: 0 },
-  card: { width: W, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
-  photo: { width: '100%', height: 220, borderRadius: borderRadius.lg, marginBottom: spacing.sm },
-  cardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: spacing.xs,
+  container: { 
+    flex: 1, 
+    backgroundColor: colors.background 
   },
-  cardName: { fontSize: 15, fontWeight: '700', color: colors.text },
-  starsRow: { flexDirection: 'row', gap: 2, marginTop: 2 },
-  planBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: borderRadius.full },
-  planBadgeText: { fontSize: 10, fontWeight: '700' },
+  
+  header: { 
+    paddingHorizontal: spacing.lg, 
+    paddingTop: spacing.xl + 8, 
+    paddingBottom: spacing.lg 
+  },
+  
+  headerLabel: { 
+    fontSize: 11, 
+    fontWeight: '800', 
+    color: colors.primary, 
+    letterSpacing: 2, 
+    marginBottom: spacing.xs 
+  },
+  
+  title: { 
+    fontSize: 26, 
+    fontWeight: '800', 
+    color: colors.text, 
+    lineHeight: 34,
+    marginBottom: spacing.sm,
+  },
+  
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  
+  stars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  
+  ratingText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  
+  scrollView: { 
+    flex: 1 
+  },
+  
+  cardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  
+  card: {
+    width: cardWidth,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+  
+  cardImage: {
+    width: '100%',
+    height: 180,
+    backgroundColor: colors.border,
+  },
+  
   resultBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.primary + '18', borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md, paddingVertical: 5,
-    alignSelf: 'flex-start', marginBottom: spacing.sm,
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
   },
-  resultText: { fontSize: 12, fontWeight: '700', color: colors.primary },
-  quoteWrap: { backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md },
-  quoteText: { fontSize: 13, color: colors.textSecondary, lineHeight: 20, fontStyle: 'italic', marginTop: 4 },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, marginVertical: spacing.sm },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
-  dotActive: { backgroundColor: colors.primary, width: 20 },
-  statsRow: { flexDirection: 'row', paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
-  statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 15, fontWeight: '800', color: colors.primary },
-  statLabel: { fontSize: 10, color: colors.textSecondary, textAlign: 'center', marginTop: 2 },
-  ctaWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+  
+  resultText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#fff',
+    textTransform: 'uppercase',
+  },
+  
+  cardContent: {
+    padding: spacing.md,
+  },
+  
+  cardName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  
+  cardStars: {
+    flexDirection: 'row',
+    gap: 2,
+    marginBottom: spacing.sm,
+  },
+  
+  cardQuote: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    lineHeight: 16,
+    fontStyle: 'italic',
+    marginBottom: spacing.sm,
+  },
+  
+  planTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  
+  planTagText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  
+  statsSection: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+  },
+  
+  statsTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.text,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  
+  statCard: {
+    width: cardWidth,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    alignItems: 'center',
+  },
+  
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.primary,
+    marginTop: spacing.sm,
+  },
+  
+  statLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  
+  ctaWrap: { 
+    paddingHorizontal: spacing.lg, 
+    paddingVertical: spacing.lg,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  
   ctaBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: spacing.sm, borderRadius: borderRadius.lg, paddingVertical: spacing.md + 2,
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    gap: spacing.sm, 
+    borderRadius: borderRadius.lg, 
+    paddingVertical: spacing.md + 2,
   },
-  ctaText: { fontSize: 17, fontWeight: '800', color: '#fff' },
+  
+  ctaText: { 
+    fontSize: 16, 
+    fontWeight: '800', 
+    color: '#fff' 
+  },
 });

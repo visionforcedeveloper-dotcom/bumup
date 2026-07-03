@@ -114,8 +114,8 @@ android {
         applicationId 'com.bumup.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 46
-        versionName "1.4.7"
+        versionCode 47
+        versionName "1.4.8"
     }
     signingConfigs {
         debug {
@@ -169,6 +169,9 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    
+    // RevenueCat
+    implementation "com.revenuecat.purchases:purchases:10.1.0"
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
