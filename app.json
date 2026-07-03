@@ -28,10 +28,10 @@
     "web": {
       "bundler": "metro"
     },
-    "owner": "visionforce5",
+    "owner": "visionforce6",
     "extra": {
       "eas": {
-        "projectId": "4dfa0e27-f395-43ac-8d5e-807342f39c7b"
+        "projectId": "e25f5ce1-4d8a-42cb-b650-796029fdf63b"
       }
     }
   }
