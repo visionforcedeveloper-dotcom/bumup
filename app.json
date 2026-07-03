@@ -21,6 +21,7 @@
     "android": {
       "package": "com.bumup.app",
       "versionCode": 47,
+      "minSdkVersion": 24,
       "adaptiveIcon": {
         "foregroundImage": "./Assets/logo/logo-png.png",
         "backgroundColor": "#0D0B0E"

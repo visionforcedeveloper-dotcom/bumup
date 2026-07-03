@@ -19,6 +19,12 @@ module.exports = function withFixGradleProperties(config) {
     // Required for native libs to load correctly from Play Store AAB splits
     set('expo.useLegacyPackaging', 'true');
 
+    // Required by react-native-worklets and expo-modules-core
+    set('android.minSdkVersion', '24');
+
+    // Suppress compileSdk 35 warning
+    set('android.suppressUnsupportedCompileSdk', '35');
+
     return config;
   });
 };
