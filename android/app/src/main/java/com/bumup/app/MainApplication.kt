@@ -15,9 +15,6 @@ import com.facebook.soloader.SoLoader
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
 
-import com.revenuecat.purchases.Purchases
-import com.revenuecat.purchases.PurchasesConfiguration
-
 class MainApplication : Application(), ReactApplication {
 
   override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
@@ -43,12 +40,6 @@ class MainApplication : Application(), ReactApplication {
   override fun onCreate() {
     super.onCreate()
     SoLoader.init(this, false)
-    
-    // Configure RevenueCat
-    Purchases.logLevel = if (BuildConfig.DEBUG) com.revenuecat.purchases.LogLevel.DEBUG else com.revenuecat.purchases.LogLevel.INFO
-    Purchases.configure(PurchasesConfiguration.Builder(this, "test_MNVoFIKcSyVWqytznrKHiIWckSE")
-      .build())
-    
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
       DefaultNewArchitectureEntryPoint.load()
     }
