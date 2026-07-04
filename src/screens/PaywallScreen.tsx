@@ -44,7 +44,9 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
         // Seleciona o anual por padrão (ou o primeiro disponível)
         const annual = pkgs.find(p => 
           p.identifier.includes('annual') || 
-          p.packageType === 'ANNUAL'
+          p.packageType === 'ANNUAL' ||
+          p.product.identifier.includes('anual') ||
+          p.product.identifier === 'bumbup_anual'
         );
         setSelected(annual?.identifier || pkgs[0]?.identifier || '');
       }
@@ -113,14 +115,19 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
     }
   };
 
+  const isAnual = (pkg: PurchasesPackage) =>
+    pkg.packageType === 'ANNUAL' ||
+    pkg.product.identifier.includes('anual') ||
+    pkg.product.identifier === 'bumbup_anual';
+
   const formatPrice = (pkg: PurchasesPackage) => {
     const price = pkg.product.priceString;
-    const period = pkg.packageType === 'ANNUAL' ? '/ano' : '/mês';
+    const period = isAnual(pkg) ? '/ano' : '/mês';
     return `${price}${period}`;
   };
 
   const formatPeriod = (pkg: PurchasesPackage) => {
-    if (pkg.packageType === 'ANNUAL') {
+    if (isAnual(pkg)) {
       const monthly = parseFloat(pkg.product.price) / 12;
       return `equivale a R$ ${monthly.toFixed(2)}/mês`;
     }
@@ -128,17 +135,17 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
   };
 
   const getLabel = (pkg: PurchasesPackage) => {
-    if (pkg.packageType === 'ANNUAL') return 'Anual';
-    if (pkg.packageType === 'MONTHLY') return 'Mensal';
+    if (isAnual(pkg)) return 'Anual';
+    if (pkg.packageType === 'MONTHLY' || pkg.product.identifier.includes('mensal')) return 'Mensal';
     return pkg.product.title;
   };
 
   const getBadge = (pkg: PurchasesPackage) => {
-    return pkg.packageType === 'ANNUAL' ? 'MELHOR OFERTA' : '';
+    return isAnual(pkg) ? 'MELHOR OFERTA' : '';
   };
 
   const getSaving = (pkg: PurchasesPackage) => {
-    return pkg.packageType === 'ANNUAL' ? 'Economize 86%' : '';
+    return isAnual(pkg) ? 'Economize 86%' : '';
   };
 
   if (loading) {
