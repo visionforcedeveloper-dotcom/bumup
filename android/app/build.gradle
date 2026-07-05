@@ -114,7 +114,7 @@ android {
         applicationId 'com.bumup.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion 35
-        versionCode 50
+        versionCode 51
         versionName "1.5.0"
         
         // 16KB page size compatibility for Android 15+
