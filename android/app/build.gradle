@@ -120,7 +120,8 @@ android {
         // 16KB page size compatibility for Android 15+
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+                          "-DANDROID_LD=lld"
             }
         }
         ndk {
