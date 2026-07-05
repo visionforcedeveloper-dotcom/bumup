@@ -20,8 +20,8 @@ const FEATURES = [
   { icon: 'star' as const,           text: 'Suporte prioritário' },
 ];
 
-export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => void }> = ({
-  onSubscribe, onSkip,
+export const PaywallScreen: React.FC<{ onSubscribe: () => void }> = ({
+  onSubscribe,
 }) => {
   const [selected, setSelected] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -165,9 +165,6 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
         <TouchableOpacity onPress={loadOfferings} style={styles.retryBtn}>
           <Text style={styles.retryText}>Tentar novamente</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onSkip} style={styles.skipBtn}>
-          <Text style={styles.skipText}>Continuar sem premium</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -278,10 +275,6 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
           disabled={purchasing}
         >
           <Text style={styles.restoreText}>Restaurar compras</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={onSkip} style={styles.skipBtn} disabled={purchasing}>
-          <Text style={styles.skipText}>Continuar sem premium</Text>
         </TouchableOpacity>
       </View>
 
