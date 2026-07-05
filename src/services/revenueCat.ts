@@ -7,8 +7,8 @@ import { Platform } from 'react-native';
 
 // Chaves da API do RevenueCat
 const API_KEYS = {
-  android: 'SEU_ANDROID_API_KEY_AQUI', // Substitua pela sua chave Android
-  ios: 'SEU_IOS_API_KEY_AQUI', // Substitua pela sua chave iOS
+  android: 'goog_tZYuFAVPqUIRvesnclpVcyZtcoJ',
+  ios: 'SEU_IOS_API_KEY_AQUI',
 };
 
 class RevenueCatService {
