@@ -1,8 +1,3 @@
-import Purchases, {
-  PurchasesPackage,
-  CustomerInfo,
-  PurchasesOfferings,
-} from 'react-native-purchases';
 import { Platform } from 'react-native';
 
 // Chaves da API do RevenueCat
@@ -11,153 +6,107 @@ const API_KEYS = {
   ios: 'SEU_IOS_API_KEY_AQUI',
 };
 
+// Mock para Expo Go (não suporta módulos nativos)
+const isMockMode = __DEV__;
+
 class RevenueCatService {
   private initialized = false;
 
-  /**
-   * Inicializa o RevenueCat SDK
-   * Chame isso no App.tsx assim que o app carregar
-   */
   async initialize(userId?: string): Promise<void> {
     if (this.initialized) return;
+    if (isMockMode) {
+      this.initialized = true;
+      return;
+    }
 
     try {
+      const Purchases = require('react-native-purchases').default;
+
       const apiKey = Platform.select({
         android: API_KEYS.android,
         ios: API_KEYS.ios,
         default: API_KEYS.android,
       });
 
-      if (!apiKey || apiKey.includes('SEU_')) {
-        console.warn('⚠️ RevenueCat API Key não configurada!');
-        return;
-      }
-
-      // Configurar SDK
       Purchases.configure({ apiKey });
-
-      // Definir usuário se fornecido
-      if (userId) {
-        await Purchases.logIn(userId);
-      }
-
-      // Habilitar logs em desenvolvimento
-      if (__DEV__) {
-        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
-      }
-
+      if (userId) await Purchases.logIn(userId);
       this.initialized = true;
-      console.log('✅ RevenueCat inicializado com sucesso');
     } catch (error) {
       console.error('❌ Erro ao inicializar RevenueCat:', error);
-      throw error;
     }
   }
 
-  /**
-   * Busca as ofertas/produtos disponíveis
-   */
-  async getOfferings(): Promise<PurchasesOfferings | null> {
+  async getOfferings(): Promise<any> {
+    if (isMockMode) return null;
     try {
-      const offerings = await Purchases.getOfferings();
-      return offerings;
-    } catch (error) {
-      console.error('❌ Erro ao buscar offerings:', error);
+      const Purchases = require('react-native-purchases').default;
+      return await Purchases.getOfferings();
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Realiza a compra de um pacote
-   */
-  async purchasePackage(pkg: PurchasesPackage): Promise<{
-    customerInfo: CustomerInfo;
-    success: boolean;
-  }> {
+  async purchasePackage(pkg: any): Promise<{ customerInfo: any; success: boolean }> {
+    if (isMockMode) {
+      return { customerInfo: {}, success: true };
+    }
     try {
+      const Purchases = require('react-native-purchases').default;
       const { customerInfo } = await Purchases.purchasePackage(pkg);
-      return {
-        customerInfo,
-        success: true,
-      };
+      return { customerInfo, success: true };
     } catch (error: any) {
-      // Usuário cancelou
       if (error.userCancelled) {
-        console.log('ℹ️ Compra cancelada pelo usuário');
         return { customerInfo: error.customerInfo, success: false };
       }
-
-      console.error('❌ Erro na compra:', error);
       throw error;
     }
   }
 
-  /**
-   * Restaura compras anteriores
-   */
-  async restorePurchases(): Promise<CustomerInfo> {
+  async restorePurchases(): Promise<any> {
+    if (isMockMode) return { entitlements: { active: {} } };
     try {
-      const customerInfo = await Purchases.restorePurchases();
-      console.log('✅ Compras restauradas com sucesso');
-      return customerInfo;
+      const Purchases = require('react-native-purchases').default;
+      return await Purchases.restorePurchases();
     } catch (error) {
-      console.error('❌ Erro ao restaurar compras:', error);
       throw error;
     }
   }
 
-  /**
-   * Verifica se o usuário tem acesso premium
-   */
   async checkPremiumAccess(): Promise<boolean> {
+    if (isMockMode) return false;
     try {
+      const Purchases = require('react-native-purchases').default;
       const customerInfo = await Purchases.getCustomerInfo();
-      
-      // Verifica se tem algum entitlement ativo
-      // Ajuste o nome do entitlement conforme configurado no RevenueCat
-      const hasPremium =
-        typeof customerInfo.entitlements.active['premium'] !== 'undefined';
-
-      return hasPremium;
-    } catch (error) {
-      console.error('❌ Erro ao verificar acesso premium:', error);
+      return typeof customerInfo.entitlements.active['premium'] !== 'undefined';
+    } catch {
       return false;
     }
   }
 
-  /**
-   * Obtém informações do cliente
-   */
-  async getCustomerInfo(): Promise<CustomerInfo | null> {
+  async getCustomerInfo(): Promise<any> {
+    if (isMockMode) return null;
     try {
+      const Purchases = require('react-native-purchases').default;
       return await Purchases.getCustomerInfo();
-    } catch (error) {
-      console.error('❌ Erro ao obter customer info:', error);
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Define atributos do usuário para analytics
-   */
   async setUserAttributes(attributes: Record<string, string | null>): Promise<void> {
+    if (isMockMode) return;
     try {
+      const Purchases = require('react-native-purchases').default;
       await Purchases.setAttributes(attributes);
-    } catch (error) {
-      console.error('❌ Erro ao definir atributos:', error);
-    }
+    } catch {}
   }
 
-  /**
-   * Faz logout do usuário atual
-   */
   async logout(): Promise<void> {
+    if (isMockMode) return;
     try {
+      const Purchases = require('react-native-purchases').default;
       await Purchases.logOut();
-      console.log('✅ Logout realizado');
-    } catch (error) {
-      console.error('❌ Erro no logout:', error);
-    }
+    } catch {}
   }
 }
 

@@ -35,6 +35,37 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void }> = ({
   const loadOfferings = async () => {
     try {
       setLoading(true);
+
+      // Em dev (Expo Go), usar planos mockados para visualização
+      if (__DEV__) {
+        const mockPackages: any[] = [
+          {
+            identifier: 'bumbup_anual',
+            packageType: 'ANNUAL',
+            product: {
+              identifier: 'bumbup_anual',
+              title: 'Plano Anual',
+              price: 47.00,
+              priceString: 'R$ 47,00',
+            },
+          },
+          {
+            identifier: 'bumup_mensal',
+            packageType: 'MONTHLY',
+            product: {
+              identifier: 'bumup_mensal',
+              title: 'Plano Mensal',
+              price: 27.00,
+              priceString: 'R$ 27,00',
+            },
+          },
+        ];
+        setPackages(mockPackages);
+        setSelected('bumbup_anual');
+        setLoading(false);
+        return;
+      }
+
       const offerings = await revenueCatService.getOfferings();
       
       if (offerings?.current?.availablePackages) {
@@ -59,6 +90,14 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void }> = ({
   };
 
   const handlePurchase = async () => {
+    // Em dev, simula compra bem-sucedida
+    if (__DEV__) {
+      Alert.alert('🎉 Simulação', 'Compra simulada com sucesso! (modo dev)', [
+        { text: 'Entrar no app', onPress: onSubscribe },
+      ]);
+      return;
+    }
+
     const selectedPackage = packages.find(p => p.identifier === selected);
     if (!selectedPackage) {
       Alert.alert('Erro', 'Selecione um plano');
