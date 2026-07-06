@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, ActivityIndicator, Alert,
+  TouchableOpacity, ActivityIndicator, Alert, Image,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -321,6 +321,55 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
         </Text>
       </View>
 
+      {/* Depoimentos */}
+      <View style={styles.testimonialsSection}>
+        <Text style={styles.testimonialsTitle}>O que dizem nossas alunas</Text>
+        {[
+          {
+            name: 'Ana Carolina', age: 27,
+            result: '+4cm de glúteo em 6 semanas',
+            text: 'Nunca achei que conseguiria ver resultados tão rápido. O plano personalizado fez toda a diferença.',
+            stars: 5, image: require('../../Assets/depol/1.png'),
+          },
+          {
+            name: 'Juliana Melo', age: 31,
+            result: '-3kg e glúteo definido',
+            text: 'Tentei vários apps antes mas nenhum era focado no que eu queria. O BumUp entendeu meu objetivo.',
+            stars: 5, image: require('../../Assets/depol/2.png'),
+          },
+          {
+            name: 'Mariana Santos', age: 24,
+            result: 'Bumbum mais redondo e elevado',
+            text: 'Os GIFs ajudam muito a entender a execução. Em 8 semanas minha calça ficou apertada nos lugares certos!',
+            stars: 5, image: require('../../Assets/depol/3.png'),
+          },
+          {
+            name: 'Camila Rocha', age: 29,
+            result: '+6cm em 3 meses',
+            text: 'Comecei como iniciante sem saber nada. O app foi aumentando a intensidade no ritmo certo para mim.',
+            stars: 5, image: require('../../Assets/depol/4.png'),
+          },
+        ].map((t, i) => (
+          <View key={i} style={styles.testimonialCard}>
+            <View style={styles.testimonialHeader}>
+              <Image source={t.image} style={styles.testimonialAvatar} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.testimonialName}>{t.name}, {t.age}</Text>
+                <View style={styles.starsRow}>
+                  {Array.from({ length: t.stars }).map((_, s) => (
+                    <MaterialIcons key={s} name="star" size={12} color="#F4845F" />
+                  ))}
+                </View>
+              </View>
+              <View style={styles.resultBadge}>
+                <Text style={styles.resultText}>{t.result}</Text>
+              </View>
+            </View>
+            <Text style={styles.testimonialText}>"{t.text}"</Text>
+          </View>
+        ))}
+      </View>
+
       <View style={{ height: 40 }} />
     </ScrollView>
   );
@@ -429,4 +478,21 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   guaranteeText: { flex: 1, fontSize: 12, color: colors.textSecondary, lineHeight: 18 },
+  testimonialsSection: { paddingHorizontal: spacing.lg, marginTop: spacing.lg, gap: spacing.md },
+  testimonialsTitle: { fontSize: 18, fontWeight: '800', color: colors.text, marginBottom: spacing.sm },
+  testimonialCard: {
+    backgroundColor: colors.card, borderRadius: borderRadius.lg,
+    padding: spacing.md, gap: spacing.sm,
+    borderWidth: 1, borderColor: colors.border,
+  },
+  testimonialHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  testimonialAvatar: { width: 44, height: 44, borderRadius: 22 },
+  testimonialName: { fontSize: 13, fontWeight: '700', color: colors.text },
+  starsRow: { flexDirection: 'row', gap: 2, marginTop: 2 },
+  resultBadge: {
+    backgroundColor: colors.primary + '20', borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm, paddingVertical: 4,
+  },
+  resultText: { fontSize: 10, fontWeight: '700', color: colors.primary },
+  testimonialText: { fontSize: 13, color: colors.textSecondary, lineHeight: 19, fontStyle: 'italic' },
 });
