@@ -281,13 +281,6 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
 
       {/* CTA */}
       <View style={styles.ctaWrap}>
-        {/* Banner 3 dias grátis */}
-        <View style={styles.trialBanner}>
-          <MaterialIcons name="celebration" size={18} color={colors.success} />
-          <Text style={styles.trialBannerText}>3 dias completamente grátis</Text>
-          <Text style={styles.trialBannerSub}>sem cobrança agora</Text>
-        </View>
-
         <TouchableOpacity 
           onPress={handlePurchase} 
           activeOpacity={0.88}
@@ -303,7 +296,7 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
             ) : (
               <>
                 <MaterialIcons name="lock-open" size={20} color="#fff" />
-                <Text style={styles.ctaText}>Começar grátis por 3 dias</Text>
+                <Text style={styles.ctaText}>Assinar agora</Text>
               </>
             )}
           </LinearGradient>
@@ -324,7 +317,7 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => vo
       <View style={styles.guarantee}>
         <MaterialIcons name="verified-user" size={20} color={colors.success} />
         <Text style={styles.guaranteeText}>
-          3 dias grátis para testar. Após o período, você será cobrada conforme o plano escolhido. Cancele a qualquer momento.
+          Você será cobrada conforme o plano escolhido. Cancele a qualquer momento.
         </Text>
       </View>
 

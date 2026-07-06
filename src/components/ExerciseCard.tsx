@@ -84,6 +84,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onPress, c
             <Text style={styles.meta}>{exercise.defaultRest}s</Text>
           </View>
         </View>
+        <TouchableOpacity style={styles.startBtn} onPress={onPress} activeOpacity={0.85}>
+          <MaterialIcons name="play-arrow" size={18} color="#fff" />
+          <Text style={styles.startBtnText}>Iniciar exercício</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -130,6 +134,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
   },
   meta: { fontSize: 11, color: colors.textSecondary },
+  startBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.xs, marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: 12,
+  },
+  startBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   // Compact
   compactContainer: {
     flexDirection: 'row', alignItems: 'center',
