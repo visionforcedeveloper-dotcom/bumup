@@ -153,39 +153,10 @@ function ChallengeCard({ ch, onPress }: { ch: Challenge; onPress: () => void }) 
 // ─────────────────────────────────────────────────────────────────────────────
 // DETALHE DE TREINO
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers de desbloqueio
-// ─────────────────────────────────────────────────────────────────────────────
-const FREE_EXERCISES = 3; // primeiros N exercícios sempre livres
-const UNLOCK_DAYS   = 3; // dias necessários para desbloquear o resto
-
-function getDaysInstalled(installDate: string): number {
-  const diff = Date.now() - new Date(installDate).getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
-function getUnlockCountdown(installDate: string): string {
-  const unlockAt = new Date(installDate).getTime() + UNLOCK_DAYS * 24 * 60 * 60 * 1000;
-  const diff = unlockAt - Date.now();
-  if (diff <= 0) return '';
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  if (h >= 24) {
-    const d = Math.floor(h / 24);
-    return `${d} dia${d > 1 ? 's' : ''}`;
-  }
-  return `${h}h ${m}min`;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DETALHE DE TREINO — com bloqueio de exercícios
+// DETALHE DE TREINO
 // ─────────────────────────────────────────────────────────────────────────────
 function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; navigation: any; onBack: () => void }) {
   const exs = getExercisesByIds(plan.exerciseIds);
-  const { installDate } = useStore();
-  const safeDate = installDate ?? new Date().toISOString();
-  const daysIn    = getDaysInstalled(safeDate);
-  const isUnlocked = daysIn >= UNLOCK_DAYS;
-  const countdown  = getUnlockCountdown(safeDate);
 
   return (
     <View style={styles.container}>
@@ -200,9 +171,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
           </View>
           <TouchableOpacity
             style={[styles.startBtnHeader, { backgroundColor: plan.color }]}
-            onPress={() => navigation.navigate('ActiveWorkout', {
-              plan: { ...plan, exerciseIds: isUnlocked ? plan.exerciseIds : plan.exerciseIds.slice(0, FREE_EXERCISES) }
-            })}
+            onPress={() => navigation.navigate('ActiveWorkout', { plan })}
           >
             <MaterialIcons name="play-arrow" size={16} color="#fff" />
             <Text style={styles.startBtnHeaderText}>Iniciar</Text>
@@ -226,19 +195,9 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
         </View>
       </View>
 
-      {/* Banner de desbloqueio */}
-      {!isUnlocked && (
-        <View style={styles.unlockBanner}>
-          <MaterialIcons name="lock-clock" size={16} color={colors.warning} />
-          <Text style={styles.unlockBannerText}>
-            {exs.length - FREE_EXERCISES} exercícios desbloqueiam em {countdown}
-          </Text>
-        </View>
-      )}
-
       <View style={styles.listLabelRow}>
         <Text style={styles.listLabel}>Exercícios</Text>
-        <Text style={styles.listCount}>{isUnlocked ? exs.length : `${FREE_EXERCISES}/${exs.length}`} disponíveis</Text>
+        <Text style={styles.listCount}>{exs.length} disponíveis</Text>
       </View>
 
       <FlatList
@@ -246,47 +205,26 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listPad}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => {
-          const locked = !isUnlocked && index >= FREE_EXERCISES;
-          return (
-            <View style={[styles.exerciseRow, locked && styles.exerciseRowLocked]}>
-              <View style={[styles.indexCircle, { backgroundColor: locked ? colors.border : plan.color + '28' }]}>
-                {locked
-                  ? <MaterialIcons name="lock" size={13} color={colors.textMuted} />
-                  : <Text style={[styles.indexText, { color: plan.color }]}>{index + 1}</Text>
-                }
-              </View>
-              <View style={{ flex: 1 }}>
-                {locked ? (
-                  <View style={styles.lockedExCard}>
-                    {/* Blur simulado com overlay */}
-                    <View style={styles.lockedExBlur}>
-                      <ExerciseCard exercise={item} onPress={() => {}} compact />
-                    </View>
-                    <View style={styles.lockedExOverlay}>
-                      <MaterialIcons name="lock" size={18} color={colors.warning} />
-                      <Text style={styles.lockedExText}>Disponível em {countdown}</Text>
-                    </View>
-                  </View>
-                ) : (
-                  <ExerciseCard
-                    exercise={item}
-                    onPress={() => navigation.navigate('ExerciseDetail', { exercise: item })}
-                    compact
-                  />
-                )}
-              </View>
+        renderItem={({ item, index }) => (
+          <View style={styles.exerciseRow}>
+            <View style={[styles.indexCircle, { backgroundColor: plan.color + '28' }]}>
+              <Text style={[styles.indexText, { color: plan.color }]}>{index + 1}</Text>
             </View>
-          );
-        }}
+            <View style={{ flex: 1 }}>
+              <ExerciseCard
+                exercise={item}
+                onPress={() => navigation.navigate('ExerciseDetail', { exercise: item })}
+                compact
+              />
+            </View>
+          </View>
+        )}
         ListFooterComponent={
           <View style={{ paddingTop: spacing.md, paddingBottom: 80 }}>
             <PulseButton
               label="Iniciar Treino"
               color={plan.color}
-              onPress={() => navigation.navigate('ActiveWorkout', {
-                plan: { ...plan, exerciseIds: isUnlocked ? plan.exerciseIds : plan.exerciseIds.slice(0, FREE_EXERCISES) }
-              })}
+              onPress={() => navigation.navigate('ActiveWorkout', { plan })}
             />
           </View>
         }
