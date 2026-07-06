@@ -243,8 +243,8 @@ function ChallengeDetail({ ch, navigation, onBack }: { ch: Challenge; navigation
 
   const { completedChallengeFases, markChallengeFaseComplete } = useStore();
   const completed: number[] = completedChallengeFases[ch.id] ?? [];
-  // Fase desbloqueada = primeira não concluída (ou 0 se nenhuma concluída)
-  const unlockedPhase = completed.length;
+  // Todas as fases desbloqueadas
+  const unlockedPhase = phases.length;
 
   const handleStartPhase = (phaseIdx: number, phase: any) => {
     navigation.navigate('ActiveWorkout', {
