@@ -20,8 +20,8 @@ const FEATURES = [
   { icon: 'star' as const,           text: 'Suporte prioritário' },
 ];
 
-export const PaywallScreen: React.FC<{ onSubscribe: () => void }> = ({
-  onSubscribe,
+export const PaywallScreen: React.FC<{ onSubscribe: () => void; onSkip: () => void }> = ({
+  onSubscribe, onSkip,
 }) => {
   const [selected, setSelected] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -212,6 +212,9 @@ export const PaywallScreen: React.FC<{ onSubscribe: () => void }> = ({
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <LinearGradient colors={['#2D1033', colors.background]} style={styles.header}>
+        <TouchableOpacity onPress={onSkip} style={styles.closeBtn}>
+          <MaterialIcons name="close" size={24} color={colors.textSecondary} />
+        </TouchableOpacity>
         <View style={styles.badge}>
           <MaterialIcons name="workspace-premium" size={14} color={colors.primary} />
           <Text style={styles.badgeText}>BumUp Premium</Text>
@@ -344,6 +347,13 @@ const styles = StyleSheet.create({
   },
   retryText: { fontSize: 14, fontWeight: '700', color: '#fff' },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl + 8, paddingBottom: spacing.lg },
+  closeBtn: {
+    position: 'absolute',
+    top: spacing.xl + 8,
+    right: spacing.lg,
+    zIndex: 10,
+    padding: spacing.xs,
+  },
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
     backgroundColor: colors.primary + '20', alignSelf: 'flex-start',

@@ -120,6 +120,7 @@ function AppContent() {
     return (
       <PaywallScreen
         onSubscribe={() => { completeOnboarding(); setStep('app'); }}
+        onSkip={() => { completeOnboarding(); setStep('app'); }}
       />
     );
   }
