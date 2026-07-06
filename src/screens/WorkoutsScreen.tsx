@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, FlatList, ImageBackground,
+  TouchableOpacity, FlatList, ImageBackground, Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +13,7 @@ import {
 } from '../data/exercises';
 import { useStore } from '../store/useStore';
 import { ExerciseCard } from '../components/ExerciseCard';
+import { PaywallScreen } from './PaywallScreen';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 type ActiveView =
@@ -155,11 +156,40 @@ function ChallengeCard({ ch, onPress }: { ch: Challenge; onPress: () => void }) 
 // ─────────────────────────────────────────────────────────────────────────────
 // DETALHE DE TREINO
 // ─────────────────────────────────────────────────────────────────────────────
+const FREE_EXERCISES = 3;
+
 function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; navigation: any; onBack: () => void }) {
   const exs = getExercisesByIds(plan.exerciseIds);
+  const { isPremium, setPremium, completeOnboarding } = useStore();
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  const handleExercisePress = (item: any, index: number) => {
+    if (!isPremium && index >= FREE_EXERCISES) {
+      setShowPaywall(true);
+      return;
+    }
+    navigation.navigate('ExerciseDetail', { exercise: item });
+  };
+
+  const handleStartPlan = () => {
+    if (!isPremium) {
+      const limited = { ...plan, exerciseIds: plan.exerciseIds.slice(0, FREE_EXERCISES) };
+      navigation.navigate('ActiveWorkout', { plan: limited });
+      return;
+    }
+    navigation.navigate('ActiveWorkout', { plan });
+  };
 
   return (
     <View style={styles.container}>
+      {/* Modal Paywall */}
+      <Modal visible={showPaywall} animationType="slide" onRequestClose={() => setShowPaywall(false)}>
+        <PaywallScreen
+          onSubscribe={() => { setPremium(true); setShowPaywall(false); }}
+          onSkip={() => setShowPaywall(false)}
+        />
+      </Modal>
+
       <LinearGradient colors={[plan.color + '28', 'transparent']} style={styles.detailHeaderBg}>
         <View style={styles.detailHeader}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack}>
@@ -171,7 +201,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
           </View>
           <TouchableOpacity
             style={[styles.startBtnHeader, { backgroundColor: plan.color }]}
-            onPress={() => navigation.navigate('ActiveWorkout', { plan })}
+            onPress={handleStartPlan}
           >
             <MaterialIcons name="play-arrow" size={16} color="#fff" />
             <Text style={styles.startBtnHeaderText}>Iniciar</Text>
@@ -197,7 +227,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
 
       <View style={styles.listLabelRow}>
         <Text style={styles.listLabel}>Exercícios</Text>
-        <Text style={styles.listCount}>{exs.length} disponíveis</Text>
+        <Text style={styles.listCount}>{isPremium ? exs.length : `${FREE_EXERCISES}/${exs.length}`} disponíveis</Text>
       </View>
 
       <FlatList
@@ -205,26 +235,35 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listPad}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <View style={styles.exerciseRow}>
-            <View style={[styles.indexCircle, { backgroundColor: plan.color + '28' }]}>
-              <Text style={[styles.indexText, { color: plan.color }]}>{index + 1}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <ExerciseCard
-                exercise={item}
-                onPress={() => navigation.navigate('ExerciseDetail', { exercise: item })}
-                compact
-              />
-            </View>
-          </View>
-        )}
+        renderItem={({ item, index }) => {
+          const locked = !isPremium && index >= FREE_EXERCISES;
+          return (
+            <TouchableOpacity
+              style={styles.exerciseRow}
+              onPress={() => handleExercisePress(item, index)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.indexCircle, { backgroundColor: locked ? colors.border : plan.color + '28' }]}>
+                {locked
+                  ? <MaterialIcons name="lock" size={13} color={colors.primary} />
+                  : <Text style={[styles.indexText, { color: plan.color }]}>{index + 1}</Text>
+                }
+              </View>
+              <View style={{ flex: 1, opacity: locked ? 0.6 : 1 }}>
+                <ExerciseCard exercise={item} onPress={() => handleExercisePress(item, index)} compact />
+              </View>
+              {locked && (
+                <MaterialIcons name="workspace-premium" size={16} color={colors.primary} style={{ marginLeft: spacing.sm }} />
+              )}
+            </TouchableOpacity>
+          );
+        }}
         ListFooterComponent={
           <View style={{ paddingTop: spacing.md, paddingBottom: 80 }}>
             <PulseButton
               label="Iniciar Treino"
               color={plan.color}
-              onPress={() => navigation.navigate('ActiveWorkout', { plan })}
+              onPress={handleStartPlan}
             />
           </View>
         }

@@ -119,7 +119,7 @@ function AppContent() {
   if (step === 'paywall') {
     return (
       <PaywallScreen
-        onSubscribe={() => { completeOnboarding(); setStep('app'); }}
+        onSubscribe={() => { completeOnboarding(); useStore.getState().setPremium(true); setStep('app'); }}
         onSkip={() => { completeOnboarding(); setStep('app'); }}
       />
     );

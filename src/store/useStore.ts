@@ -73,6 +73,8 @@ export interface ChallengeProgress {
 interface FitnessStore {
   profile: UserProfile;
   onboarded: boolean;
+  isPremium: boolean;
+  setPremium: (value: boolean) => void;
   profileLoaded: boolean;
 
   loadProfile: () => Promise<void>;
@@ -131,19 +133,26 @@ const DEFAULT_PROFILE: UserProfile = {
 export const useStore = create<FitnessStore>((set, get) => ({
   profile: DEFAULT_PROFILE,
   onboarded: false,
+  isPremium: false,
+  setPremium: (value) => {
+    set({ isPremium: value });
+    storage.setItem('@bumup_premium', value ? 'true' : 'false').catch(() => {});
+  },
   profileLoaded: false,
 
   loadProfile: async () => {
     try {
-      const [profileJson, onboardedVal, activePlanJson, fasesJson, installDateStr] = await Promise.all([
+      const [profileJson, onboardedVal, activePlanJson, fasesJson, installDateStr, premiumVal] = await Promise.all([
         storage.getItem(STORAGE_KEY),
         storage.getItem(ONBOARDING_KEY),
         storage.getItem(ACTIVE_PLAN_KEY),
         storage.getItem('@bumup_challenge_fases'),
         storage.getItem(INSTALL_DATE_KEY),
+        storage.getItem('@bumup_premium'),
       ]);
       const profile = profileJson ? JSON.parse(profileJson) : DEFAULT_PROFILE;
       const onboarded = onboardedVal === 'true';
+      const isPremium = premiumVal === 'true';
       const userActivePlan = activePlanJson ? JSON.parse(activePlanJson) : null;
       const completedChallengeFases = fasesJson ? JSON.parse(fasesJson) : {};
       // Salva data de instalação na primeira vez
@@ -151,7 +160,7 @@ export const useStore = create<FitnessStore>((set, get) => ({
       if (!installDateStr) {
         storage.setItem(INSTALL_DATE_KEY, installDate).catch(() => {});
       }
-      set({ profile, onboarded, profileLoaded: true, userActivePlan, completedChallengeFases, installDate });
+      set({ profile, onboarded, isPremium, profileLoaded: true, userActivePlan, completedChallengeFases, installDate });
     } catch {
       set({ profileLoaded: true, installDate: new Date().toISOString() });
     }
