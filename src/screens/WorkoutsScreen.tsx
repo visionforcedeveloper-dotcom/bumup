@@ -453,14 +453,23 @@ function ChallengeDetail({ ch, navigation, onBack }: { ch: Challenge; navigation
 // ─────────────────────────────────────────────────────────────────────────────
 export const WorkoutsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [view, setView] = useState<ActiveView>({ kind: 'list' });
+  const { isPremium, setPremium, completeOnboarding } = useStore();
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  const handleChallengePress = (ch: Challenge) => {
+    if (!isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    setView({ kind: 'challenge', challenge: ch });
+  };
 
   if (view.kind === 'workout') {
     return <WorkoutDetail plan={view.plan} navigation={navigation} onBack={() => setView({ kind: 'plans' })} />;
   }
   if (view.kind === 'challenge') {
     return <ChallengeDetail ch={view.challenge} navigation={navigation} onBack={() => setView({ kind: 'challenges_list' })} />;
-  }
-  if (view.kind === 'plans') {
+  }  if (view.kind === 'plans') {
     return (
       <View style={styles.container}>
         <View style={styles.subHeader}>
@@ -484,6 +493,12 @@ export const WorkoutsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   if (view.kind === 'challenges_list') {
     return (
       <View style={styles.container}>
+        <Modal visible={showPaywall} animationType="slide" onRequestClose={() => setShowPaywall(false)}>
+          <PaywallScreen
+            onSubscribe={() => { setPremium(true); setShowPaywall(false); }}
+            onSkip={() => setShowPaywall(false)}
+          />
+        </Modal>
         <View style={styles.subHeader}>
           <TouchableOpacity style={styles.backBtn} onPress={() => setView({ kind: 'list' })}>
             <MaterialIcons name="arrow-back" size={20} color={colors.text} />
@@ -495,7 +510,7 @@ export const WorkoutsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         </View>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {challenges.map((ch) => (
-            <ChallengeCard key={ch.id} ch={ch} onPress={() => setView({ kind: 'challenge', challenge: ch })} />
+            <ChallengeCard key={ch.id} ch={ch} onPress={() => handleChallengePress(ch)} />
           ))}
           <View style={{ height: 100 }} />
         </ScrollView>

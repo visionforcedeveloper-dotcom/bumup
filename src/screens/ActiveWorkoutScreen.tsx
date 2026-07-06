@@ -309,19 +309,10 @@ export const ActiveWorkoutScreen: React.FC<{ navigation: any; route: any }> = ({
 
   // ── Finalizar treino ──────────────────────────────────────────────────────
   const handleFinish = () => {
-    Alert.alert('Finalizar Treino', 'Deseja encerrar o treino agora?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Finalizar',
-        onPress: () => {
-          clearInterval(workoutTimerRef.current);
-          clearInterval(serieTimerRef.current);
-          finishWorkout();
-          if (plan.onComplete) plan.onComplete();
-          navigation.navigate('WorkoutSummary', { duration: elapsed, planName: plan.name });
-        },
-      },
-    ]);
+    clearInterval(workoutTimerRef.current);
+    clearInterval(serieTimerRef.current);
+    finishWorkout();
+    navigation.navigate('WorkoutSummary', { duration: elapsed, planName: plan.name });
   };
 
   if (!ex) return null;
