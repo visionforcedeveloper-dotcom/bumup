@@ -1,7 +1,7 @@
-{
+﻿{
   "expo": {
     "name": "BumUp",
-    "slug": "bumup",
+    "slug": "bumup-app",
     "version": "1.5.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -28,11 +28,6 @@
     "web": {
       "bundler": "metro"
     },
-    "owner": "visionforce6",
-    "extra": {
-      "eas": {
-        "projectId": "e25f5ce1-4d8a-42cb-b650-796029fdf63b"
-      }
-    }
+    "owner": "visionforce7"
   }
 }
