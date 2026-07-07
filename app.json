@@ -1,4 +1,4 @@
-﻿{
+{
   "expo": {
     "name": "BumUp",
     "slug": "bumup-app",
@@ -28,6 +28,11 @@
     "web": {
       "bundler": "metro"
     },
-    "owner": "visionforce7"
+    "owner": "visionforce7",
+    "extra": {
+      "eas": {
+        "projectId": "136c0428-7b29-4baf-9d84-b0da13100c8d"
+      }
+    }
   }
 }
