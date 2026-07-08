@@ -173,8 +173,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
 
   const handleStartPlan = () => {
     if (!isPremium) {
-      const limited = { ...plan, exerciseIds: plan.exerciseIds.slice(0, FREE_EXERCISES) };
-      navigation.navigate('ActiveWorkout', { plan: limited });
+      setShowPaywall(true);
       return;
     }
     navigation.navigate('ActiveWorkout', { plan });
@@ -278,14 +277,18 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
 function ChallengeDetail({ ch, navigation, onBack }: { ch: Challenge; navigation: any; onBack: () => void }) {
   const phases: any[] = ch.weeks ?? ch.months ?? [];
   const [expandedPhase, setExpandedPhase] = useState<number | null>(0);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const { completedChallengeFases, markChallengeFaseComplete, isPremium, setPremium } = useStore();
   const icon = CHALLENGE_ICON[ch.id] ?? 'emoji-events';
 
-  const { completedChallengeFases, markChallengeFaseComplete } = useStore();
   const completed: number[] = completedChallengeFases[ch.id] ?? [];
-  // Todas as fases desbloqueadas
   const unlockedPhase = phases.length;
 
   const handleStartPhase = (phaseIdx: number, phase: any) => {
+    if (!isPremium) {
+      setShowPaywall(true);
+      return;
+    }
     navigation.navigate('ActiveWorkout', {
       plan: {
         id: `${ch.id}_${phaseIdx}`,
@@ -300,6 +303,12 @@ function ChallengeDetail({ ch, navigation, onBack }: { ch: Challenge; navigation
 
   return (
     <View style={styles.container}>
+      <Modal visible={showPaywall} animationType="slide" onRequestClose={() => setShowPaywall(false)}>
+        <PaywallScreen
+          onSubscribe={() => { setPremium(true); setShowPaywall(false); }}
+          onSkip={() => setShowPaywall(false)}
+        />
+      </Modal>
       <LinearGradient colors={[ch.color + '28', 'transparent']} style={styles.detailHeaderBg}>
         <View style={styles.detailHeader}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack}>
