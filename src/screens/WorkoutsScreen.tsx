@@ -224,6 +224,14 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
         </View>
       </View>
 
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
+        <PulseButton
+          label="Iniciar Treino"
+          color={plan.color}
+          onPress={handleStartPlan}
+        />
+      </View>
+
       <View style={styles.listLabelRow}>
         <Text style={styles.listLabel}>Exercícios</Text>
         <Text style={styles.listCount}>{isPremium ? exs.length : `${FREE_EXERCISES}/${exs.length}`} disponíveis</Text>
@@ -258,13 +266,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
           );
         }}
         ListFooterComponent={
-          <View style={{ paddingTop: spacing.md, paddingBottom: 80 }}>
-            <PulseButton
-              label="Iniciar Treino"
-              color={plan.color}
-              onPress={handleStartPlan}
-            />
-          </View>
+          <View style={{ height: 80 }} />
         }
       />
     </View>
