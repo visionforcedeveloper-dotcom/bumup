@@ -37,9 +37,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onPress, c
         </View>
         <View style={styles.compactInfo}>
           <Text style={styles.compactName} numberOfLines={1}>{exercise.name}</Text>
-          <Text style={styles.compactMeta}>
-            {exercise.defaultSets} séries · {exercise.defaultReps} reps
-          </Text>
         </View>
         <View style={[styles.diffBadge, { backgroundColor: difficultyColor[exercise.difficulty] + '22' }]}>
           <Text style={[styles.diffText, { color: difficultyColor[exercise.difficulty] }]}>
