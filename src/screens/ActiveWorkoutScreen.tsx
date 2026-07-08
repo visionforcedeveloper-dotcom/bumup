@@ -377,30 +377,6 @@ export const ActiveWorkoutScreen: React.FC<{ navigation: any; route: any }> = ({
         <Text style={styles.progressTxt}>{totalDone}/{planExercises.length}</Text>
       </View>
 
-      {/* ── Dots de exercícios ───────────────────────────────────────────── */}
-      <ScrollView
-        horizontal showsHorizontalScrollIndicator={false}
-        style={styles.dotsScroll}
-        contentContainerStyle={styles.dotsContent}
-      >
-        {planExercises.map((e: any, i: number) => (
-          <TouchableOpacity
-            key={i}
-            onPress={() => goTo(i)}
-            style={[
-              styles.dot,
-              i === currentIdx && styles.dotActive,
-              exDone[i]        && styles.dotDone,
-            ]}
-          >
-            {exDone[i]
-              ? <MaterialIcons name="check" size={11} color="#fff" />
-              : <Text style={[styles.dotText, i === currentIdx && { color: '#fff' }]}>{i + 1}</Text>
-            }
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       {/* ── Área inferior ────────────────────────────────────────────────── */}
       <View style={styles.bottom}>
 
