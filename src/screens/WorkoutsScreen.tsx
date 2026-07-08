@@ -152,19 +152,16 @@ function ChallengeCard({ ch, onPress }: { ch: Challenge; onPress: () => void }) 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DETALHE DE TREINO
 // ─────────────────────────────────────────────────────────────────────────────
 // DETALHE DE TREINO
 // ─────────────────────────────────────────────────────────────────────────────
-const FREE_EXERCISES = 3;
-
 function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; navigation: any; onBack: () => void }) {
   const exs = getExercisesByIds(plan.exerciseIds);
-  const { isPremium, setPremium, completeOnboarding } = useStore();
+  const { isPremium, setPremium } = useStore();
   const [showPaywall, setShowPaywall] = useState(false);
 
-  const handleExercisePress = (item: any, index: number) => {
-    if (!isPremium && index >= FREE_EXERCISES) {
+  const handleExercisePress = (item: any) => {
+    if (!isPremium) {
       setShowPaywall(true);
       return;
     }
