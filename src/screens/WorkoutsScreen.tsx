@@ -231,7 +231,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
 
       <View style={styles.listLabelRow}>
         <Text style={styles.listLabel}>Exercícios</Text>
-        <Text style={styles.listCount}>{isPremium ? exs.length : `${FREE_EXERCISES}/${exs.length}`} disponíveis</Text>
+        <Text style={styles.listCount}>{exs.length} disponíveis</Text>
       </View>
 
       <FlatList
@@ -240,11 +240,11 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
         contentContainerStyle={styles.listPad}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
-          const locked = !isPremium && index >= FREE_EXERCISES;
+          const locked = !isPremium;
           return (
             <TouchableOpacity
               style={styles.exerciseRow}
-              onPress={() => handleExercisePress(item, index)}
+              onPress={() => handleExercisePress(item)}
               activeOpacity={0.8}
             >
               <View style={[styles.indexCircle, { backgroundColor: locked ? colors.border : plan.color + '28' }]}>
@@ -254,7 +254,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
                 }
               </View>
               <View style={{ flex: 1, opacity: locked ? 0.6 : 1 }}>
-                <ExerciseCard exercise={item} onPress={() => handleExercisePress(item, index)} compact />
+                <ExerciseCard exercise={item} onPress={() => handleExercisePress(item)} compact />
               </View>
               {locked && (
                 <MaterialIcons name="workspace-premium" size={16} color={colors.primary} style={{ marginLeft: spacing.sm }} />
