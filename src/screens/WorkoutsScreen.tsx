@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, FlatList, ImageBackground, Modal,
+  TouchableOpacity, FlatList, Image, ImageBackground, Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -161,6 +161,7 @@ function WorkoutDetail({ plan, navigation, onBack }: { plan: WorkoutPlan; naviga
   const [showPaywall, setShowPaywall] = useState(false);
 
   const handleExercisePress = (item: any) => {
+    console.log('isPremium:', isPremium, 'showPaywall:', showPaywall);
     if (!isPremium) {
       setShowPaywall(true);
       return;
@@ -534,74 +535,54 @@ export const WorkoutsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* Card Desafios — em cima */}
+        {/* Card Desafios */}
         <TouchableOpacity style={styles.bigCard} activeOpacity={0.88} onPress={() => setView({ kind: 'challenges_list' })}>
-          <ImageBackground
-            source={require('../../Assets/img-gluteos/Criando-glúteos-grandes-com-treino-para-glúteos.jpg')}
-            style={styles.bigCardBg} imageStyle={styles.bigCardImg}
+          <LinearGradient
+            colors={['#1a0a12', '#3D0B22', '#7A0A35']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.bigCardInner}
           >
-            <LinearGradient colors={['rgba(13,11,14,0.1)', 'rgba(13,11,14,0.95)']} style={styles.bigCardGrad}>
-              <View style={styles.bigCardContent}>
-                <View style={styles.bigCardTop}>
-                  <View style={[styles.bigCardBadge, { backgroundColor: '#B57BEA' }]}>
-                    <MaterialIcons name="emoji-events" size={12} color="#fff" />
-                    <Text style={styles.bigCardBadgeText}>{challenges.length} desafios</Text>
-                  </View>
-                </View>
-                <View style={styles.bigCardBottom}>
-                  <Text style={styles.bigCardEyebrow}>DESAFIOS</Text>
-                  <Text style={styles.bigCardTitle}>Desafio</Text>
-                  <Text style={styles.bigCardDesc}>Comprometa-se com um prazo e veja a transformação acontecer.</Text>
-                  <View style={styles.pillRow}>
-                    {challenges.map((ch) => (
-                      <View key={ch.id} style={[styles.levelPill, { borderColor: ch.color + '80' }]}>
-                        <Text style={[styles.levelPillText, { color: ch.color }]}>{ch.totalDays} dias</Text>
-                      </View>
-                    ))}
-                  </View>
-                  <View style={[styles.bigCardBtn, { backgroundColor: '#B57BEA' }]}>
-                    <Text style={styles.bigCardBtnText}>Ver Desafios</Text>
-                    <MaterialIcons name="arrow-forward" size={16} color="#fff" />
-                  </View>
-                </View>
+            <View style={styles.bigCardLeft}>
+              <Text style={styles.bigCardEyebrow}>DESAFIOS</Text>
+              <Text style={styles.bigCardTitle}>Desafio{'\n'}Glúteos</Text>
+              <Text style={styles.bigCardTitlePink}>{challenges.length} desafios</Text>
+              <Text style={styles.bigCardDesc}>Comprometa-se com um prazo e veja a transformação acontecer.</Text>
+              <View style={styles.bigCardBtn}>
+                <Text style={styles.bigCardBtnText}>Ver Desafios</Text>
+                <MaterialIcons name="chevron-right" size={18} color="#fff" />
               </View>
-            </LinearGradient>
-          </ImageBackground>
+            </View>
+            <Image
+              source={require('../../Assets/img-gluteos/treino-img2.png')}
+              style={styles.bigCardImg}
+              resizeMode="contain"
+            />
+          </LinearGradient>
         </TouchableOpacity>
 
-        {/* Card Treinos — embaixo */}
+        {/* Card Treinos */}
         <TouchableOpacity style={styles.bigCard} activeOpacity={0.88} onPress={() => setView({ kind: 'plans' })}>
-          <ImageBackground
-            source={require('../../Assets/img-gluteos/bumbum-exercicios-academia-ptbf9uix7q0fg0ullx3wqy865759i4eedoou2u35f0.jpg')}
-            style={styles.bigCardBg} imageStyle={styles.bigCardImg}
+          <LinearGradient
+            colors={['#1a0a12', '#3D0B22', '#7A0A35']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.bigCardInner}
           >
-            <LinearGradient colors={['rgba(13,11,14,0.1)', 'rgba(13,11,14,0.95)']} style={styles.bigCardGrad}>
-              <View style={styles.bigCardContent}>
-                <View style={styles.bigCardTop}>
-                  <View style={[styles.bigCardBadge, { backgroundColor: colors.primary }]}>
-                    <MaterialIcons name="fitness-center" size={12} color="#fff" />
-                    <Text style={styles.bigCardBadgeText}>{workoutPlans.length} planos</Text>
-                  </View>
-                </View>
-                <View style={styles.bigCardBottom}>
-                  <Text style={styles.bigCardEyebrow}>TREINOS</Text>
-                  <Text style={styles.bigCardTitle}>Planos de Glúteos</Text>
-                  <Text style={styles.bigCardDesc}>Do iniciante ao avançado. Escolha seu nível e comece agora.</Text>
-                  <View style={styles.pillRow}>
-                    {workoutPlans.map((p) => (
-                      <View key={p.id} style={[styles.levelPill, { borderColor: p.color + '80' }]}>
-                        <Text style={[styles.levelPillText, { color: p.color }]}>{p.category}</Text>
-                      </View>
-                    ))}
-                  </View>
-                  <View style={[styles.bigCardBtn, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.bigCardBtnText}>Ver Treinos</Text>
-                    <MaterialIcons name="arrow-forward" size={16} color="#fff" />
-                  </View>
-                </View>
+            <View style={styles.bigCardLeft}>
+              <Text style={styles.bigCardEyebrow}>TREINOS</Text>
+              <Text style={styles.bigCardTitle}>Planos de{'\n'}Glúteos</Text>
+              <Text style={styles.bigCardTitlePink}>{workoutPlans.length} planos</Text>
+              <Text style={styles.bigCardDesc}>Do iniciante ao avançado. Escolha seu nível e comece agora.</Text>
+              <View style={styles.bigCardBtn}>
+                <Text style={styles.bigCardBtnText}>Ver Treinos</Text>
+                <MaterialIcons name="chevron-right" size={18} color="#fff" />
               </View>
-            </LinearGradient>
-          </ImageBackground>
+            </View>
+            <Image
+              source={require('../../Assets/img-gluteos/treino-img.png')}
+              style={styles.bigCardImg}
+              resizeMode="contain"
+            />
+          </LinearGradient>
         </TouchableOpacity>
 
         <View style={{ height: 100 }} />
@@ -778,32 +759,23 @@ const styles = StyleSheet.create({
   phaseDoneText: { fontSize: 12, color: colors.success, fontWeight: '600', flex: 1 },
 
   // ── Big cards ──────────────────────────────────────────────────────────────
-  bigCard: { height: 280, borderRadius: borderRadius.xl, overflow: 'hidden', marginBottom: spacing.md },
-  bigCardBg: { flex: 1 },
-  bigCardImg: { borderRadius: borderRadius.xl },
-  bigCardGrad: { flex: 1, borderRadius: borderRadius.xl, padding: spacing.md, justifyContent: 'space-between' },
-  bigCardContent: { flex: 1, justifyContent: 'space-between' },
-  bigCardTop: { flexDirection: 'row' },
-  bigCardBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: borderRadius.full,
+  bigCard: { borderRadius: borderRadius.lg, overflow: 'hidden', marginBottom: spacing.md },
+  bigCardInner: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: borderRadius.lg, minHeight: 210, overflow: 'hidden',
   },
-  bigCardBadgeText: { fontSize: 11, fontWeight: '800', color: '#fff' },
-  bigCardBottom: { gap: spacing.sm },
-  bigCardEyebrow: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.55)', letterSpacing: 2 },
-  bigCardTitle: { fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
-  bigCardDesc: { fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 19 },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  levelPill: {
-    paddingHorizontal: spacing.sm, paddingVertical: 4,
-    borderRadius: borderRadius.full, borderWidth: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  levelPillText: { fontSize: 11, fontWeight: '700' },
+  bigCardLeft: { flex: 1, padding: spacing.lg, justifyContent: 'center', gap: 6 },
+  bigCardEyebrow: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.5)', letterSpacing: 2 },
+  bigCardTitle: { fontSize: 22, fontWeight: '900', color: '#fff', lineHeight: 28 },
+  bigCardTitlePink: { fontSize: 16, fontWeight: '800', color: colors.primary },
+  bigCardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 18, marginTop: 2 },
+  bigCardImg: { width: 155, height: 190 },
   bigCardBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    borderRadius: borderRadius.full, paddingVertical: 11, paddingHorizontal: spacing.lg,
-    alignSelf: 'flex-start', marginTop: spacing.xs,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: colors.primary,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.md, paddingVertical: 10,
+    borderRadius: borderRadius.full, marginTop: spacing.sm,
   },
-  bigCardBtnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  bigCardBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
 });

@@ -30,6 +30,9 @@ export const ProfileScreen: React.FC = () => {
             await storage.setItem('@bumup_onboarded', 'false');
             await storage.setItem('@bumup_profile', '{}');
             await storage.setItem('@bumup_history', '[]');
+            await storage.setItem('@bumup_premium', 'false');
+            await storage.setItem('@bumup_flow_step', '');
+            useStore.getState().setPremium(false);
             Alert.alert('Feito', 'Feche e reabra o app para ver o quiz.');
           },
         },

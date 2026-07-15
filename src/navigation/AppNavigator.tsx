@@ -10,7 +10,6 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { WorkoutsScreen } from '../screens/WorkoutsScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { NutritionScreen } from '../screens/NutritionScreen';
 import { ActiveWorkoutScreen } from '../screens/ActiveWorkoutScreen';
 import { WorkoutSummaryScreen } from '../screens/WorkoutSummaryScreen';
 import { ExerciseDetailScreen } from '../screens/ExerciseDetailScreen';
@@ -21,11 +20,10 @@ const Stack = createStackNavigator();
 type TabIconName = keyof typeof MaterialIcons.glyphMap;
 
 const tabConfig: Record<string, { icon: TabIconName; label: string }> = {
-  Home:      { icon: 'home',           label: 'Início' },
-  Workouts:  { icon: 'fitness-center', label: 'Treinos' },
-  Progress:  { icon: 'bar-chart',      label: 'Progresso' },
-  Nutrition: { icon: 'emoji-events',   label: 'Desafios' },
-  Profile:   { icon: 'person',         label: 'Perfil' },
+  Home:     { icon: 'home',           label: 'Início' },
+  Workouts: { icon: 'fitness-center', label: 'Treinos' },
+  Progress: { icon: 'bar-chart',      label: 'Progresso' },
+  Profile:  { icon: 'person',         label: 'Perfil' },
 };
 
 function MainTabs() {
@@ -51,7 +49,6 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Workouts" component={WorkoutsScreen} />
       <Tab.Screen name="Progress" component={ProgressScreen} />
-      <Tab.Screen name="Nutrition" component={NutritionScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

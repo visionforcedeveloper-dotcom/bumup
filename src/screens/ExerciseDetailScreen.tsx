@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
 import { Exercise, workoutPlans } from '../data/exercises';
 import { PulseButton } from '../components/PulseButton';
+import { GifPlayer } from '../components/GifPlayer';
 
 const muscleColor: Record<string, string> = {
   Glúteos: '#F472B6', Pernas: '#A78BFA', Core: '#60A5FA',

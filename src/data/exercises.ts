@@ -361,7 +361,7 @@ export const workoutPlans: WorkoutPlan[] = [
     level: 'Iniciante',
     daysPerWeek: 3,
     category: 'Iniciante',
-    color: '#D96B9E',
+    color: '#FF2D6B',
     type: 'workout',
     exerciseIds: ['ex01','ex02','ex03','ex04','ex05','ex06','ex07','ex08','ex09','ex10','ex11','ex12','ex13','ex14','ex15'],
   },
@@ -375,7 +375,7 @@ export const workoutPlans: WorkoutPlan[] = [
     level: 'Intermediário',
     daysPerWeek: 4,
     category: 'Intermediário',
-    color: '#F4845F',
+    color: '#FF2D6B',
     type: 'workout',
     exerciseIds: ['ex16','ex17','ex18','ex19','ex20','ex21','ex22','ex23','ex24','ex25','ex26','ex27','ex28','ex29','ex30'],
   },
@@ -389,7 +389,7 @@ export const workoutPlans: WorkoutPlan[] = [
     level: 'Avançado',
     daysPerWeek: 5,
     category: 'Avançado',
-    color: '#B57BEA',
+    color: '#FF2D6B',
     type: 'workout',
     exerciseIds: ['ex31','ex32','ex33','ex34','ex35','ex36','ex37','ex38','ex39','ex40','ex41','ex42'],
   },
@@ -403,7 +403,7 @@ export const workoutPlans: WorkoutPlan[] = [
     level: 'Iniciante',
     daysPerWeek: 3,
     category: 'Casa',
-    color: '#89A8E0',
+    color: '#FF2D6B',
     type: 'workout',
     exerciseIds: ['ex01','ex02','ex43','ex10','ex11','ex12','ex09','ex05','ex14','ex19','ex21','ex24','ex26','ex27','ex30'],
   },
@@ -444,7 +444,7 @@ export const challenges: Challenge[] = [
     emoji: '🎯',
     description: 'Um mês de foco total para criar o hábito e sentir a diferença.',
     totalDays: 30,
-    color: '#D96B9E',
+    color: '#FF2D6B',
     type: 'challenge',
     weeks: [
       { week: 1, label: 'Semana 1 — Base', exerciseIds: ['ex01','ex04','ex11','ex09'] },
@@ -459,7 +459,7 @@ export const challenges: Challenge[] = [
     emoji: '🚀',
     description: 'Dois meses para transformar o bumbum com progressão gradual.',
     totalDays: 60,
-    color: '#F4845F',
+    color: '#FF2D6B',
     type: 'challenge',
     months: [
       {
@@ -482,7 +482,7 @@ export const challenges: Challenge[] = [
     emoji: '👑',
     description: 'A transformação completa em 3 meses. Do zero ao avançado.',
     totalDays: 90,
-    color: '#B57BEA',
+    color: '#FF2D6B',
     type: 'challenge',
     months: [
       {

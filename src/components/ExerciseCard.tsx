@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, borderRadius, spacing } from '../theme';
 import { Exercise } from '../data/exercises';
+import { GifPlayer } from './GifPlayer';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -28,10 +29,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onPress, c
 
   if (compact) {
     return (
-      <TouchableOpacity style={styles.compactContainer} onPress={onPress} activeOpacity={0.8}>
+      <View style={styles.compactContainer}>
         <View style={styles.compactThumb}>
           {hasGif
-            ? <Image source={exercise.gifUrl} style={styles.compactGif} resizeMode="cover" />
+            ? <GifPlayer gifSource={exercise.gifUrl} style={styles.compactGif} resizeMode="cover" />
             : <MaterialIcons name="fitness-center" size={22} color={mColor} />
           }
         </View>
@@ -43,7 +44,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onPress, c
             {exercise.difficulty}
           </Text>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   }
 
@@ -51,7 +52,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({ exercise, onPress, c
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.imageContainer}>
         {hasGif
-          ? <Image source={exercise.gifUrl} style={styles.gif} resizeMode="contain" />
+          ? <GifPlayer gifSource={exercise.gifUrl} style={styles.gif} resizeMode="contain" />
           : (
             <View style={[styles.gifPlaceholder, { backgroundColor: mColor + '15' }]}>
               <MaterialIcons name="fitness-center" size={48} color={mColor + '80'} />

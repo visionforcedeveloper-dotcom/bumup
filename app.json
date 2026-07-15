@@ -2,7 +2,7 @@
   "expo": {
     "name": "BumUp",
     "slug": "bumup-app",
-    "version": "3.0.0",
+    "version": "3.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "jsEngine": "hermes",
@@ -19,7 +19,7 @@
     ],
     "android": {
       "package": "com.bumup.app",
-      "versionCode": 72,
+      "versionCode": 73,
       "adaptiveIcon": {
         "foregroundImage": "./Assets/logo/logo-png.png",
         "backgroundColor": "#0D0B0E"

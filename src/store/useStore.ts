@@ -150,19 +150,26 @@ export const useStore = create<FitnessStore>((set, get) => ({
         storage.getItem(INSTALL_DATE_KEY),
         storage.getItem('@bumup_premium'),
       ]);
-      const profile = profileJson ? JSON.parse(profileJson) : DEFAULT_PROFILE;
+
+      let profile = DEFAULT_PROFILE;
+      try { if (profileJson) profile = { ...DEFAULT_PROFILE, ...JSON.parse(profileJson) }; } catch {}
+
       const onboarded = onboardedVal === 'true';
       const isPremium = premiumVal === 'true';
-      const userActivePlan = activePlanJson ? JSON.parse(activePlanJson) : null;
-      const completedChallengeFases = fasesJson ? JSON.parse(fasesJson) : {};
-      // Salva data de instalação na primeira vez
+
+      let userActivePlan = null;
+      try { if (activePlanJson) userActivePlan = JSON.parse(activePlanJson); } catch {}
+
+      let completedChallengeFases = {};
+      try { if (fasesJson) completedChallengeFases = JSON.parse(fasesJson); } catch {}
+
       const installDate = installDateStr ?? new Date().toISOString();
       if (!installDateStr) {
         storage.setItem(INSTALL_DATE_KEY, installDate).catch(() => {});
       }
       set({ profile, onboarded, isPremium, profileLoaded: true, userActivePlan, completedChallengeFases, installDate });
     } catch {
-      set({ profileLoaded: true, installDate: new Date().toISOString() });
+      set({ profile: DEFAULT_PROFILE, profileLoaded: true, installDate: new Date().toISOString() });
     }
   },
 
