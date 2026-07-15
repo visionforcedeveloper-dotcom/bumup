@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "jsEngine": "hermes",
+    "newArchEnabled": false,
     "icon": "./Assets/logo/logo-png.png",
     "splash": {
       "image": "./Assets/logo/logo-png.png",
