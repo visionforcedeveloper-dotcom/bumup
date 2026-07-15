@@ -1,29 +1,29 @@
 export const colors = {
-  primary: '#D96B9E',        // rosa vibrante principal
-  primaryDark: '#B84F80',
-  primaryLight: '#F0A0C8',
-  accent: '#B57BEA',         // lilás/roxo
+  primary: '#FF2D6B',
+  primaryDark: '#C4144E',
+  primaryLight: '#FF6B9D',
 
-  accentOrange: '#F4845F',   // coral suave
-  accentPurple: '#B57BEA',   // lilás
-  accentBlue: '#89A8E0',     // azul acinzentado
-  accentPink: '#F472B6',     // rosa claro
+  accent: '#FF2D6B',
+  accentOrange: '#FF6B35',
+  accentPurple: '#9B5DE5',
+  accentBlue: '#4CC9F0',
+  accentPink: '#FF2D6B',
 
-  background: '#0D0B0E',     // preto com toque quente
-  surface: '#141118',
-  card: '#1C1720',
-  cardLight: '#231D28',
+  background: '#0A0A0F',
+  surface: '#111118',
+  card: '#18181F',
+  cardLight: '#1E1E28',
 
-  text: '#F8F0F5',
-  textSecondary: '#A090A8',
-  textMuted: '#5A4F62',
+  text: '#FFFFFF',
+  textSecondary: '#8A8A9A',
+  textMuted: '#4A4A5A',
 
-  success: '#7ECBA0',
-  warning: '#E8B870',
-  error: '#E87878',
+  success: '#00D9A3',
+  warning: '#FFB830',
+  error: '#FF4444',
 
-  border: '#2C2233',
-  overlay: 'rgba(13,11,14,0.85)',
+  border: '#222230',
+  overlay: 'rgba(10,10,15,0.85)',
 };
 
 export const spacing = {
@@ -31,15 +31,15 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  sm: 8, md: 12, lg: 16, xl: 24, full: 999,
+  sm: 8, md: 14, lg: 20, xl: 28, full: 999,
 };
 
 export const typography = {
-  h1: { fontSize: 28, fontWeight: '800' as const, letterSpacing: -0.5 },
-  h2: { fontSize: 22, fontWeight: '700' as const },
-  h3: { fontSize: 18, fontWeight: '600' as const },
-  h4: { fontSize: 16, fontWeight: '600' as const },
-  body: { fontSize: 14, fontWeight: '400' as const },
+  h1: { fontSize: 32, fontWeight: '900' as const, letterSpacing: -1 },
+  h2: { fontSize: 24, fontWeight: '800' as const, letterSpacing: -0.5 },
+  h3: { fontSize: 18, fontWeight: '700' as const },
+  h4: { fontSize: 16, fontWeight: '700' as const },
+  body: { fontSize: 14, fontWeight: '400' as const, lineHeight: 22 },
   small: { fontSize: 12, fontWeight: '400' as const },
-  caption: { fontSize: 11, fontWeight: '400' as const },
+  caption: { fontSize: 11, fontWeight: '500' as const },
 };

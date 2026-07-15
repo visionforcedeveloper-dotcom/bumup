@@ -13,8 +13,8 @@ module.exports = function withFixGradleProperties(config) {
       }
     };
 
-    // React Native 0.81+ requires New Architecture
-    set('newArchEnabled', 'true');
+    // React Native 0.76 - New Architecture desabilitada para compatibilidade
+    set('newArchEnabled', 'false');
 
     // Required for native libs to load correctly from Play Store AAB splits
     set('expo.useLegacyPackaging', 'true');

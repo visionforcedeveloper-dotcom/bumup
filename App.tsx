@@ -11,6 +11,7 @@ import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useStore } from './src/store/useStore';
 import { colors } from './src/theme';
 import { revenueCatService } from './src/services/revenueCat';
+import storage from './src/store/storage';
 
 type FlowStep = 'loading' | 'quiz' | 'processing' | 'testimonials' | 'paywall' | 'app';
 
@@ -74,7 +75,18 @@ function AppContent() {
 
   useEffect(() => {
     if (profileLoaded) {
-      setStep(onboarded ? 'app' : 'quiz');
+      if (onboarded) {
+        setStep('app');
+      } else {
+        // Recupera o último step do fluxo
+        storage.getItem('@bumup_flow_step').then((savedStep) => {
+          if (savedStep === 'paywall' || savedStep === 'testimonials' || savedStep === 'processing') {
+            setStep(savedStep as FlowStep);
+          } else {
+            setStep('quiz');
+          }
+        });
+      }
     }
   }, [profileLoaded, onboarded]);
 
@@ -98,28 +110,37 @@ function AppContent() {
     );
   }
 
+  const goToStep = (s: FlowStep) => {
+    storage.setItem('@bumup_flow_step', s).catch(() => {});
+    setStep(s);
+  };
+
   if (step === 'quiz') {
     return (
-      <OnboardingScreen onComplete={() => setStep('processing')} />
+      <OnboardingScreen onComplete={() => goToStep('processing')} />
     );
   }
 
   if (step === 'processing') {
     return (
-      <ProcessingScreen onDone={() => setStep('testimonials')} />
+      <ProcessingScreen onDone={() => goToStep('testimonials')} />
     );
   }
 
   if (step === 'testimonials') {
     return (
-      <TestimonialsScreen onContinue={() => setStep('paywall')} />
+      <TestimonialsScreen onContinue={() => goToStep('paywall')} />
     );
   }
 
   if (step === 'paywall') {
     return (
       <PaywallScreen
-        onSubscribe={() => { completeOnboarding(); useStore.getState().setPremium(true); setStep('app'); }}
+        onSubscribe={() => {
+          completeOnboarding();
+          useStore.getState().setPremium(true);
+          setStep('app');
+        }}
         onSkip={() => { completeOnboarding(); setStep('app'); }}
       />
     );

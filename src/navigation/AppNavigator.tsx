@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, borderRadius } from '../theme';
 
@@ -10,6 +10,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { WorkoutsScreen } from '../screens/WorkoutsScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { NutritionScreen } from '../screens/NutritionScreen';
 import { ActiveWorkoutScreen } from '../screens/ActiveWorkoutScreen';
 import { WorkoutSummaryScreen } from '../screens/WorkoutSummaryScreen';
 import { ExerciseDetailScreen } from '../screens/ExerciseDetailScreen';
@@ -23,6 +24,7 @@ const tabConfig: Record<string, { icon: TabIconName; label: string }> = {
   Home:      { icon: 'home',           label: 'Início' },
   Workouts:  { icon: 'fitness-center', label: 'Treinos' },
   Progress:  { icon: 'bar-chart',      label: 'Progresso' },
+  Nutrition: { icon: 'emoji-events',   label: 'Desafios' },
   Profile:   { icon: 'person',         label: 'Perfil' },
 };
 
@@ -32,25 +34,24 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: styles.tabLabel,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarIcon: ({ focused, color, size }) => (
-          <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-            <MaterialIcons
-              name={tabConfig[route.name]?.icon ?? 'circle'}
-              size={22}
-              color={color}
-            />
-          </View>
-        ),
-        tabBarLabel: tabConfig[route.name]?.label ?? route.name,
+        tabBarIcon: ({ focused, color }) => {
+          const cfg = tabConfig[route.name];
+          return (
+            <View style={styles.tabItem}>
+              <MaterialIcons name={cfg?.icon ?? 'circle'} size={24} color={color} />
+              <Text style={[styles.tabLabel, { color }]}>{cfg?.label}</Text>
+            </View>
+          );
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Workouts" component={WorkoutsScreen} />
       <Tab.Screen name="Progress" component={ProgressScreen} />
+      <Tab.Screen name="Nutrition" component={NutritionScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -74,14 +75,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopColor: colors.border,
     borderTopWidth: 1,
-    height: 68,
-    paddingBottom: 10,
-    paddingTop: 6,
+    height: 72,
+    paddingBottom: 8,
+    paddingTop: 8,
+    paddingHorizontal: 4,
   },
-  tabLabel: { fontSize: 10, fontWeight: '600' },
-  iconWrap: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
   },
-  iconWrapActive: { backgroundColor: colors.primary + '20' },
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
 });

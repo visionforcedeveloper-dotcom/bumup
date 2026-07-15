@@ -1,8 +1,8 @@
-{
+﻿{
   "expo": {
     "name": "BumUp",
     "slug": "bumup-app",
-    "version": "1.5.0",
+    "version": "3.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "jsEngine": "hermes",
@@ -19,7 +19,7 @@
     ],
     "android": {
       "package": "com.bumup.app",
-      "versionCode": 55,
+      "versionCode": 72,
       "adaptiveIcon": {
         "foregroundImage": "./Assets/logo/logo-png.png",
         "backgroundColor": "#0D0B0E"
@@ -28,11 +28,13 @@
     "web": {
       "bundler": "metro"
     },
-    "owner": "visionforce7",
+    "owner": "visionforce",
     "extra": {
       "eas": {
-        "projectId": "136c0428-7b29-4baf-9d84-b0da13100c8d"
+        "projectId": "2faa47b7-d000-43f7-ba20-8564b323492e"
       }
     }
   }
 }
+
+

@@ -7,7 +7,18 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
 import { revenueCatService } from '../services/revenueCat';
-import type { PurchasesPackage } from 'react-native-purchases';
+
+// Tipo local — evita dependência do react-native-purchases no Expo Go
+type PurchasesPackage = {
+  identifier: string;
+  packageType: string;
+  product: {
+    identifier: string;
+    title: string;
+    price: number;
+    priceString: string;
+  };
+};
 
 const FEATURES = [
   { icon: 'block' as const,          text: 'Sem anúncios — foco total no seu treino' },
