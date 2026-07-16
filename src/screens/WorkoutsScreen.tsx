@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, FlatList, Image, ImageBackground, Modal,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, borderRadius } from '../theme';
@@ -25,16 +26,16 @@ type ActiveView =
 
 // ─── Imagens locais ───────────────────────────────────────────────────────────
 const PLAN_IMAGES: Record<string, any> = {
-  plan_zero:     require('../../Assets/img-gluteos/bumbum-exercicios-academia-ptbf9uix7q0fg0ullx3wqy865759i4eedoou2u35f0.jpg'),
-  plan_max:      require('../../Assets/img-gluteos/Criando-glúteos-grandes-com-treino-para-glúteos.jpg'),
-  plan_avancado: require('../../Assets/img-gluteos/agachamento.jpg'),
-  plan_casa:     require('../../Assets/img-gluteos/como-ter-o-bumbum-dos-sonhos-1508379414.jpg'),
+  plan_zero:     require('../../Assets/img-gluteos/treino-img3.png'),
+  plan_max:      require('../../Assets/img-gluteos/treino-img4.png'),
+  plan_avancado: require('../../Assets/img-gluteos/treino-img10.png'),
+  plan_casa:     require('../../Assets/img-gluteos/treino-img6.png'),
 };
 
 const CHALLENGE_IMAGES: Record<string, any> = {
-  ch30: require('../../Assets/img-gluteos/harmonizacao-de-glueos.jpg'),
-  ch60: require('../../Assets/img-gluteos/agachamento.jpg'),
-  ch90: require('../../Assets/img-gluteos/Criando-glúteos-grandes-com-treino-para-glúteos.jpg'),
+  ch30: require('../../Assets/img-gluteos/treino-img7.png'),
+  ch60: require('../../Assets/img-gluteos/treino-img8.png'),
+  ch90: require('../../Assets/img-gluteos/treino-img9.png'),
 };
 
 const CHALLENGE_ICON: Record<string, keyof typeof MaterialIcons.glyphMap> = {
@@ -50,103 +51,69 @@ const LEVEL_COLORS: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CARD DE PLANO — com imagem de fundo local
+// CARD DE PLANO — estilo banner
 // ─────────────────────────────────────────────────────────────────────────────
 function PlanCard({ plan, onPress }: { plan: WorkoutPlan; onPress: () => void }) {
-  const levelColor = LEVEL_COLORS[plan.level] ?? colors.primary;
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.88}>
-      <ImageBackground
-        source={PLAN_IMAGES[plan.id] ?? PLAN_IMAGES['plan_zero']}
-        style={styles.cardImageBg}
-        imageStyle={styles.cardImageStyle}
+      <LinearGradient
+        colors={['#1a0a12', '#3D0B22', '#7A0A35']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={styles.cardInner}
       >
-        <LinearGradient
-          colors={['transparent', 'rgba(13,11,14,0.85)', colors.background]}
-          style={styles.cardImageGrad}
-        >
-          <View style={styles.cardImgTop}>
-            <View style={[styles.levelBadge, {
-              backgroundColor: levelColor + '30',
-              borderColor: levelColor + '80',
-              borderWidth: 1,
-            }]}>
-              <View style={[styles.levelDot, { backgroundColor: levelColor }]} />
-              <Text style={[styles.levelText, { color: levelColor }]}>{plan.level}</Text>
-            </View>
+        <View style={styles.cardLeft}>
+          <Text style={styles.cardEyebrow}>{plan.level.toUpperCase()}</Text>
+          <Text style={styles.cardTitle}>{plan.name}</Text>
+          <Text style={styles.cardDesc}>{plan.objective}</Text>
+          <View style={styles.cardMeta}>
+            <MaterialIcons name="fitness-center" size={11} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.metaTextLight}>{plan.exerciseIds.length} exercícios</Text>
+            <Text style={styles.metaDot}>·</Text>
+            <MaterialIcons name="schedule" size={11} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.metaTextLight}>{plan.duration}</Text>
           </View>
-          <View style={styles.cardImgBottom}>
-            <Text style={styles.cardTitle}>{plan.name}</Text>
-            <Text style={styles.cardDesc} numberOfLines={1}>{plan.objective}</Text>
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <MaterialIcons name="fitness-center" size={11} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.metaTextLight}>{plan.exerciseIds.length} exercícios</Text>
-              </View>
-              <View style={styles.metaDividerLight} />
-              <View style={styles.metaItem}>
-                <MaterialIcons name="schedule" size={11} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.metaTextLight}>{plan.duration}</Text>
-              </View>
-              <View style={styles.metaDividerLight} />
-              <View style={styles.metaItem}>
-                <MaterialIcons name="calendar-today" size={11} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.metaTextLight}>{plan.daysPerWeek}x/sem</Text>
-              </View>
-              <View style={[styles.arrowBtn, { backgroundColor: plan.color, marginLeft: 'auto' as any }]}>
-                <MaterialIcons name="arrow-forward" size={14} color="#fff" />
-              </View>
-            </View>
+          <View style={styles.cardBtn}>
+            <Text style={styles.cardBtnText}>Ver treino</Text>
+            <MaterialIcons name="chevron-right" size={16} color="#fff" />
           </View>
-        </LinearGradient>
-      </ImageBackground>
+        </View>
+        <Image source={PLAN_IMAGES[plan.id]} style={styles.cardImg} resizeMode="contain" />
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CARD DE DESAFIO — com imagem de fundo local
+// CARD DE DESAFIO — estilo banner
 // ─────────────────────────────────────────────────────────────────────────────
 function ChallengeCard({ ch, onPress }: { ch: Challenge; onPress: () => void }) {
   const phases = ch.weeks ? ch.weeks.length : (ch.months?.length ?? 0);
   const phaseLabel = ch.weeks ? 'semanas' : 'meses';
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.88}>
-      <ImageBackground
-        source={CHALLENGE_IMAGES[ch.id] ?? CHALLENGE_IMAGES['ch30']}
-        style={styles.cardImageBg}
-        imageStyle={styles.cardImageStyle}
+      <LinearGradient
+        colors={['#1a0a12', '#3D0B22', '#7A0A35']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={styles.cardInner}
       >
-        <LinearGradient
-          colors={['transparent', 'rgba(13,11,14,0.85)', colors.background]}
-          style={styles.cardImageGrad}
-        >
-          <View style={styles.cardImgTop}>
-            <View style={[styles.daysBadge, { backgroundColor: ch.color }]}>
-              <MaterialIcons name="date-range" size={11} color="#fff" />
-              <Text style={styles.daysBadgeText}>{ch.totalDays} dias</Text>
-            </View>
+        <View style={styles.cardLeft}>
+          <Text style={styles.cardEyebrow}>DESAFIO</Text>
+          <Text style={styles.cardTitle}>{ch.name}</Text>
+          <Text style={styles.cardDesc}>{ch.description}</Text>
+          <View style={styles.cardMeta}>
+            <MaterialIcons name="date-range" size={11} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.metaTextLight}>{ch.totalDays} dias</Text>
+            <Text style={styles.metaDot}>·</Text>
+            <MaterialIcons name="layers" size={11} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.metaTextLight}>{phases} {phaseLabel}</Text>
           </View>
-          <View style={styles.cardImgBottom}>
-            <Text style={styles.cardTitle}>{ch.name}</Text>
-            <Text style={styles.cardDesc} numberOfLines={1}>{ch.description}</Text>
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <MaterialIcons name="layers" size={11} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.metaTextLight}>{phases} {phaseLabel}</Text>
-              </View>
-              <View style={styles.metaDividerLight} />
-              <View style={styles.metaItem}>
-                <MaterialIcons name="trending-up" size={11} color="rgba(255,255,255,0.6)" />
-                <Text style={styles.metaTextLight}>Progressão gradual</Text>
-              </View>
-              <View style={[styles.arrowBtn, { backgroundColor: ch.color, marginLeft: 'auto' as any }]}>
-                <MaterialIcons name="arrow-forward" size={14} color="#fff" />
-              </View>
-            </View>
+          <View style={styles.cardBtn}>
+            <Text style={styles.cardBtnText}>Ver desafio</Text>
+            <MaterialIcons name="chevron-right" size={16} color="#fff" />
           </View>
-        </LinearGradient>
-      </ImageBackground>
+        </View>
+        <Image source={CHALLENGE_IMAGES[ch.id]} style={styles.cardImg} resizeMode="contain" />
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
@@ -462,8 +429,13 @@ function ChallengeDetail({ ch, navigation, onBack }: { ch: Challenge; navigation
 // ─────────────────────────────────────────────────────────────────────────────
 export const WorkoutsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [view, setView] = useState<ActiveView>({ kind: 'list' });
+  const isFocused = useIsFocused();
   const { isPremium, setPremium, completeOnboarding } = useStore();
   const [showPaywall, setShowPaywall] = useState(false);
+
+  useEffect(() => {
+    if (isFocused) setView({ kind: 'list' });
+  }, [isFocused]);
 
   const handleChallengePress = (ch: Challenge) => {
     if (!isPremium) {
@@ -618,41 +590,28 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  // ── Card com imagem ────────────────────────────────────────────────────────
-  card: {
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-    height: 200,
+  // ── Card estilo banner ─────────────────────────────────────────────────────
+  card: { borderRadius: borderRadius.lg, marginBottom: spacing.md, overflow: 'hidden' },
+  cardInner: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: borderRadius.lg, minHeight: 190, overflow: 'hidden',
   },
-  cardImageBg: { flex: 1 },
-  cardImageStyle: { borderRadius: borderRadius.lg },
-  cardImageGrad: {
-    flex: 1,
-    borderRadius: borderRadius.lg,
-    justifyContent: 'space-between',
-    padding: spacing.md,
-  },
-  cardImgTop: { flexDirection: 'row', justifyContent: 'flex-end' },
-  cardImgBottom: { gap: 6 },
-  levelBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: borderRadius.full,
-  },
-  levelDot: { width: 6, height: 6, borderRadius: 3 },
-  levelText: { fontSize: 11, fontWeight: '700' },
-  cardTitle: { fontSize: 20, fontWeight: '800', color: '#fff', letterSpacing: -0.3 },
-  cardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 18 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  cardLeft: { flex: 1, padding: spacing.lg, justifyContent: 'center', gap: 5 },
+  cardEyebrow: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.5)', letterSpacing: 2 },
+  cardTitle: { fontSize: 20, fontWeight: '900', color: '#fff', lineHeight: 26 },
+  cardDesc: { fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 18 },
+  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
+  metaDot: { color: 'rgba(255,255,255,0.4)', fontSize: 12 },
   metaTextLight: { fontSize: 11, color: 'rgba(255,255,255,0.6)' },
-  metaDividerLight: { width: 1, height: 10, backgroundColor: 'rgba(255,255,255,0.2)' },
-  arrowBtn: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  daysBadge: {
+  cardImg: { width: 120, height: 160 },
+  cardBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.md, paddingVertical: 8,
+    borderRadius: borderRadius.full, marginTop: spacing.sm,
   },
-  daysBadgeText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  cardBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 
   // ── Detail ─────────────────────────────────────────────────────────────────
   detailHeaderBg: { paddingBottom: spacing.sm },
