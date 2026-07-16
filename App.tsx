@@ -12,10 +12,8 @@ import { useStore } from './src/store/useStore';
 import { colors } from './src/theme';
 import { revenueCatService } from './src/services/revenueCat';
 import {
-  scheduleQuizReminder,
-  cancelQuizReminders,
-  schedulePaywallReminders,
-  cancelPaywallReminders,
+  scheduleConversionCycle,
+  cancelConversionCycle,
   scheduleInactivityReminders,
 } from './src/services/notifications';
 import storage from './src/store/storage';
@@ -55,10 +53,6 @@ function AppContent() {
   const [nativeError, setNativeError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Captura erros não tratados
-    const handler = (error: ErrorEvent) => {
-      setNativeError(error.message || 'Erro desconhecido');
-    };
     // @ts-ignore
     if (global.ErrorUtils) {
       // @ts-ignore
@@ -73,34 +67,31 @@ function AppContent() {
 
   useEffect(() => {
     loadProfile().then(() => {});
-
-    // Inicializar RevenueCat
-    revenueCatService.initialize().catch(err => {
-      console.error('Erro ao inicializar RevenueCat:', err);
-    });
-
-    // Agendar lembrete para quiz não completado (cancela automaticamente se já onboardou)
-    scheduleQuizReminder().catch(() => {});
+    revenueCatService.initialize().catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (profileLoaded) {
-      if (onboarded) {
-        setStep('app');
-        // Usuário já onboardou — cancela lembretes de quiz/paywall e agenda inatividade
-        cancelQuizReminders().catch(() => {});
-        cancelPaywallReminders().catch(() => {});
-        scheduleInactivityReminders().catch(() => {});
-      } else {
-        // Recupera o último step do fluxo
-        storage.getItem('@bumup_flow_step').then((savedStep) => {
-          if (savedStep === 'paywall' || savedStep === 'testimonials' || savedStep === 'processing') {
-            setStep(savedStep as FlowStep);
-          } else {
-            setStep('quiz');
-          }
-        });
-      }
+    if (!profileLoaded) return;
+
+    if (onboarded) {
+      // Já assinou — cancela ciclo de conversão e agenda inatividade
+      cancelConversionCycle().catch(() => {});
+      scheduleInactivityReminders().catch(() => {});
+      setStep('app');
+    } else {
+      storage.getItem('@bumup_flow_step').then((savedStep) => {
+        if (
+          savedStep === 'paywall' ||
+          savedStep === 'testimonials' ||
+          savedStep === 'processing'
+        ) {
+          // Ainda não assinou — garante que o ciclo de notificações está rodando
+          scheduleConversionCycle().catch(() => {});
+          setStep(savedStep as FlowStep);
+        } else {
+          setStep('quiz');
+        }
+      });
     }
   }, [profileLoaded, onboarded]);
 
@@ -116,6 +107,7 @@ function AppContent() {
       </ScrollView>
     );
   }
+
   if (step === 'loading') {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
@@ -131,10 +123,7 @@ function AppContent() {
 
   if (step === 'quiz') {
     return (
-      <OnboardingScreen onComplete={() => {
-        cancelQuizReminders().catch(() => {});
-        goToStep('processing');
-      }} />
+      <OnboardingScreen onComplete={() => goToStep('processing')} />
     );
   }
 
@@ -147,7 +136,8 @@ function AppContent() {
   if (step === 'testimonials') {
     return (
       <TestimonialsScreen onContinue={() => {
-        schedulePaywallReminders().catch(() => {});
+        // Usuário chegou no paywall — inicia ciclo de notificações
+        scheduleConversionCycle().catch(() => {});
         goToStep('paywall');
       }} />
     );
@@ -157,7 +147,8 @@ function AppContent() {
     return (
       <PaywallScreen
         onSubscribe={() => {
-          cancelPaywallReminders().catch(() => {});
+          // Assinou — cancela ciclo e agenda inatividade
+          cancelConversionCycle().catch(() => {});
           scheduleInactivityReminders().catch(() => {});
           completeOnboarding();
           useStore.getState().setPremium(true);
