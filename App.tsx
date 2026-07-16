@@ -11,6 +11,13 @@ import { PaywallScreen } from './src/screens/PaywallScreen';
 import { useStore } from './src/store/useStore';
 import { colors } from './src/theme';
 import { revenueCatService } from './src/services/revenueCat';
+import {
+  scheduleQuizReminder,
+  cancelQuizReminders,
+  schedulePaywallReminders,
+  cancelPaywallReminders,
+  scheduleInactivityReminders,
+} from './src/services/notifications';
 import storage from './src/store/storage';
 
 type FlowStep = 'loading' | 'quiz' | 'processing' | 'testimonials' | 'paywall' | 'app';
@@ -66,17 +73,24 @@ function AppContent() {
 
   useEffect(() => {
     loadProfile().then(() => {});
-    
+
     // Inicializar RevenueCat
     revenueCatService.initialize().catch(err => {
       console.error('Erro ao inicializar RevenueCat:', err);
     });
+
+    // Agendar lembrete para quiz não completado (cancela automaticamente se já onboardou)
+    scheduleQuizReminder().catch(() => {});
   }, []);
 
   useEffect(() => {
     if (profileLoaded) {
       if (onboarded) {
         setStep('app');
+        // Usuário já onboardou — cancela lembretes de quiz/paywall e agenda inatividade
+        cancelQuizReminders().catch(() => {});
+        cancelPaywallReminders().catch(() => {});
+        scheduleInactivityReminders().catch(() => {});
       } else {
         // Recupera o último step do fluxo
         storage.getItem('@bumup_flow_step').then((savedStep) => {
@@ -117,7 +131,10 @@ function AppContent() {
 
   if (step === 'quiz') {
     return (
-      <OnboardingScreen onComplete={() => goToStep('processing')} />
+      <OnboardingScreen onComplete={() => {
+        cancelQuizReminders().catch(() => {});
+        goToStep('processing');
+      }} />
     );
   }
 
@@ -129,7 +146,10 @@ function AppContent() {
 
   if (step === 'testimonials') {
     return (
-      <TestimonialsScreen onContinue={() => goToStep('paywall')} />
+      <TestimonialsScreen onContinue={() => {
+        schedulePaywallReminders().catch(() => {});
+        goToStep('paywall');
+      }} />
     );
   }
 
@@ -137,11 +157,16 @@ function AppContent() {
     return (
       <PaywallScreen
         onSubscribe={() => {
+          cancelPaywallReminders().catch(() => {});
+          scheduleInactivityReminders().catch(() => {});
           completeOnboarding();
           useStore.getState().setPremium(true);
           setStep('app');
         }}
-        onSkip={() => { completeOnboarding(); setStep('app'); }}
+        onSkip={() => {
+          completeOnboarding();
+          setStep('app');
+        }}
       />
     );
   }
